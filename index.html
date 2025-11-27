@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payslip Leave Parser with AI</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PDF.js Configuration -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <!-- Markdown Parser for AI responses (Marked) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-in {
+            animation: fade-in 0.5s ease-out forwards, slide-up 0.5s ease-out forwards;
+        }
+        /* Markdown Styles */
+        .prose h1 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .prose h2 { font-size: 1.25em; font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; color: #334155; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .prose p { margin-bottom: 0.75em; line-height: 1.6; }
+        .prose strong { color: #0f172a; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <!-- React Application -->
+    <script type="module">
+        import React, { useState, useEffect, useCallback, useRef } from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+        import { Upload, FileText, Check, Copy, Download, AlertCircle, Loader2, X, Sparkles, Key, Mail, RefreshCw } from 'https://esm.sh/lucide-react@0.292.0';
+
+        function PayslipParser() {
+            // State
+            const [isSdkLoaded, setIsSdkLoaded] = useState(false);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [data, setData] = useState([]);
+            const [error, setError] = useState(null);
+            const [dragActive, setDragActive] = useState(false);
+            const [fileName, setFileName] = useState('');
+            
+            // AI State
+            const [apiKey, setApiKey] = useState('');
+            const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [analysisResult, setAnalysisResult] = useState(null);
+            const [emailModal, setEmailModal] = useState({ open: false, content: '', loading: false, employee: null });
+
+            // --- Gemini API Logic ---
+            const callGemini = async (prompt) => {
+                if (!apiKey) {
+                    throw new Error("Please enter a Gemini API Key first.");
+                }
+
+                // Using REST API to avoid complex build steps with SDK in browser
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || "Failed to fetch from Gemini API");
+                }
+
+                const result = await response.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+            };
+
+            const handleAnalyzeData = async () => {
+                if (!apiKey) {
+                    setShowApiKeyInput(true);
+                    return;
+                }
+                setIsAnalyzing(true);
+                setAnalysisResult(null);
+
+                try {
+                    const prompt = `
+                        You are an HR Analytics Assistant. Analyze the following leave data extracted from payslips.
+                        
+                        Data (JSON):
+                        ${JSON.stringify(data)}
+
+                        Please provide a concise Executive Summary in Markdown format covering:
+                        1. **Overview**: Total number of employees and records.
+                        2. **High Balances**: Identify employees with high "Solde" (remaining balance > 20 days) who might need to schedule time off to avoid burnout or carry-over issues.
+                        3. **Anomalies**: Identify any negative balances or unusual data points.
+                        4. **Recommendations**: Brief 1-2 sentence advice for the HR manager.
+
+                        Use emoji bullets where appropriate. Keep it professional.
+                    `;
+                    
+                    const text = await callGemini(prompt);
+                    setAnalysisResult(text);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setIsAnalyzing(false);
+                }
+            };
+
+            const handleDraftEmail = async (row) => {
+                if (!apiKey) {
+                    setShowApiKeyInput(true);
+                    return;
+                }
+                
+                setEmailModal({ open: true, content: '', loading: true, employee: row.name });
+
+                try {
+                    const prompt = `
+                        Write a friendly, professional email from "HR Team" to the employee "${row.name}" (Matricule: ${row.matricule}).
+                        
+                        Context:
+                        - Leave Type: ${row.type}
+                        - Acquired (Acquis): ${row.acquis}
+                        - Taken (Pris): ${row.pris}
+                        - Remaining Balance (Solde): ${row.solde}
+
+                        Goal:
+                        - Inform them of their current balance.
+                        - If the balance is high (> 20), kindly suggest they plan some time off.
+                        - If the balance is negative, ask them to contact HR to correct the discrepancy.
+                        - Otherwise, just a standard update.
+                        
+                        Output only the email body text. No subject line.
+                    `;
+
+                    const text = await callGemini(prompt);
+                    setEmailModal({ open: true, content: text, loading: false, employee: row.name });
+                } catch (err) {
+                    setEmailModal({ open: false, content: '', loading: false, employee: null });
+                    setError(err.message);
+                }
+            };
+
+            // --- PDF Parsing Logic (Same as before) ---
+            const extractDataFromPdf = async (file) => {
+                setIsProcessing(true);
+                setError(null);
+                setData([]);
+                setAnalysisResult(null);
+
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    
+                    let extractedEmployees = [];
+                    let currentEmployee = { name: 'Unknown', matricule: 'Unknown' };
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        
+                        const items = textContent.items.map(item => ({
+                            str: item.str,
+                            x: item.transform[4],
+                            y: item.transform[5],
+                            w: item.width,
+                            h: item.height,
+                            hasEOL: item.hasEOL
+                        }));
+
+                        // Identify Employee
+                        const matriculeItem = items.find(item => item.str.toLowerCase().includes('matricule'));
+                        if (matriculeItem) {
+                            const nearbyNum = items.find(item => 
+                                Math.abs(item.y - matriculeItem.y) < 20 && 
+                                item.x > matriculeItem.x && 
+                                /\d+/.test(item.str)
+                            );
+                            if (nearbyNum) currentEmployee.matricule = nearbyNum.str.trim().replace(/[:\s]/g, '');
+                        }
+
+                        // Identify Name
+                        const civilityItem = items.find(item => 
+                            ['monsieur', 'madame', 'm.', 'mme'].some(t => item.str.toLowerCase().includes(t))
+                        );
+                        if (civilityItem) {
+                            const nameParts = items.filter(item => 
+                                Math.abs(item.y - civilityItem.y) < 10 && item.x >= civilityItem.x
+                            ).sort((a,b) => a.x - b.x);
+                            currentEmployee.name = nameParts.map(p => p.str).join(' ');
+                        }
+
+                        // Identify Table
+                        const headers = [
+                            { key: 'cp_n1', label: 'Congés N-1', keywords: ['congés n-1', 'conges n-1'] },
+                            { key: 'cp_n', label: 'Congés N', keywords: ['congés n', 'conges n'] },
+                            { key: 'rtt', label: 'RTT', keywords: ['jours rtt', 'rtt'] }
+                        ];
+                        const rowLabels = [
+                            { key: 'acquis', label: 'Acquis', keywords: ['acquis'] },
+                            { key: 'pris', label: 'Pris', keywords: ['pris'] },
+                            { key: 'solde', label: 'Solde', keywords: ['solde'] }
+                        ];
+
+                        let foundHeaders = [];
+                        headers.forEach(h => {
+                            const matches = items.filter(item => h.keywords.some(k => item.str.toLowerCase().includes(k)));
+                            matches.forEach(m => foundHeaders.push({ ...h, x: m.x, y: m.y }));
+                        });
+
+                        if (foundHeaders.length > 0) {
+                            foundHeaders.sort((a, b) => b.y - a.y);
+                            const primaryHeaderY = foundHeaders[0].y;
+                            const validHeaders = foundHeaders.filter(h => Math.abs(h.y - primaryHeaderY) < 50);
+
+                            const rows = [];
+                            rowLabels.forEach(r => {
+                                const matches = items.filter(item => 
+                                    r.keywords.some(k => item.str.toLowerCase().trim() === k) && item.y < primaryHeaderY
+                                );
+                                matches.forEach(m => rows.push({ ...r, x: m.x, y: m.y }));
+                            });
+
+                            if (rows.length > 0) {
+                                let employeeData = {
+                                    id: `${currentEmployee.matricule}-${i}`,
+                                    name: currentEmployee.name,
+                                    matricule: currentEmployee.matricule,
+                                    leaveData: []
+                                };
+
+                                validHeaders.forEach(header => {
+                                    rows.forEach(row => {
+                                        const cellData = items.find(item => {
+                                            const xAlign = Math.abs(item.x - header.x) < 50 || (item.x > header.x - 20 && item.x < header.x + 80);
+                                            const yAlign = Math.abs(item.y - row.y) < 15; 
+                                            const isNumber = /^-?[\d.,]+$/.test(item.str.trim());
+                                            return xAlign && yAlign && isNumber;
+                                        });
+
+                                        if (cellData) {
+                                            employeeData.leaveData.push({
+                                                type: header.label,
+                                                category: row.label,
+                                                value: cellData.str
+                                            });
+                                        }
+                                    });
+                                });
+
+                                if (employeeData.leaveData.length > 0) extractedEmployees.push(employeeData);
+                            }
+                        }
+                    }
+
+                    const formattedRows = [];
+                    extractedEmployees.forEach(emp => {
+                        const types = [...new Set(emp.leaveData.map(d => d.type))];
+                        types.forEach(type => {
+                            const row = {
+                                name: emp.name,
+                                matricule: emp.matricule,
+                                type: type,
+                                acquis: emp.leaveData.find(d => d.type === type && d.category === 'Acquis')?.value || '-',
+                                pris: emp.leaveData.find(d => d.type === type && d.category === 'Pris')?.value || '-',
+                                solde: emp.leaveData.find(d => d.type === type && d.category === 'Solde')?.value || '-'
+                            };
+                            formattedRows.push(row);
+                        });
+                    });
+
+                    if (formattedRows.length === 0) {
+                        setError("No standard leave table detected. Ensure the PDF contains 'Bulletin de Salaire' with 'Congés' tables.");
+                    } else {
+                        setData(formattedRows);
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    setError("Failed to parse PDF. Please try a different file.");
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            // Handlers
+            const handleDrag = useCallback((e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+                else if (e.type === "dragleave") setDragActive(false);
+            }, []);
+
+            const handleDrop = useCallback((e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragActive(false);
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type === "application/pdf") {
+                        setFileName(file.name);
+                        extractDataFromPdf(file);
+                    } else setError("Please upload a valid PDF file.");
+                }
+            }, []);
+
+            const handleChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    setFileName(file.name);
+                    extractDataFromPdf(file);
+                }
+            };
+
+            const downloadCSV = () => {
+                if (data.length === 0) return;
+                const header = "Matricule,Name,Type,Acquis,Pris,Solde";
+                const rows = data.map(d => `"${d.matricule}","${d.name}","${d.type}","${d.acquis}","${d.pris}","${d.solde}"`).join('\n');
+                const csvContent = `data:text/csv;charset=utf-8,${header}\n${rows}`;
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "leave_data.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            return React.createElement('div', { className: "min-h-screen bg-slate-50 text-slate-800 p-8 font-sans" },
+                React.createElement('div', { className: "max-w-6xl mx-auto space-y-6" },
+                    
+                    // Top Bar
+                    React.createElement('div', { className: "flex flex-col md:flex-row justify-between items-center gap-4" },
+                        React.createElement('div', { className: "text-left" },
+                            React.createElement('h1', { className: "text-3xl font-bold text-slate-900 tracking-tight" }, "Payslip Leave Parser"),
+                            React.createElement('p', { className: "text-slate-500" }, "Extract & Analyze leave balances with Gemini AI")
+                        ),
+                        React.createElement('div', { className: "relative group" },
+                            React.createElement('button', {
+                                onClick: () => setShowApiKeyInput(!showApiKeyInput),
+                                className: `flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors
+                                    ${apiKey ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`
+                            },
+                                React.createElement(Key, { className: "w-4 h-4" }),
+                                apiKey ? "API Key Set" : "Set API Key"
+                            ),
+                            showApiKeyInput && React.createElement('div', { className: "absolute right-0 top-12 w-72 bg-white rounded-lg shadow-xl border border-slate-200 p-4 z-50 animate-in" },
+                                React.createElement('label', { className: "block text-xs font-semibold text-slate-500 mb-1" }, "GEMINI API KEY"),
+                                React.createElement('input', {
+                                    type: "password",
+                                    value: apiKey,
+                                    onChange: (e) => setApiKey(e.target.value),
+                                    placeholder: "Paste your key here...",
+                                    className: "w-full p-2 border border-slate-300 rounded text-sm mb-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                }),
+                                React.createElement('p', { className: "text-xs text-slate-400" }, "Key is stored in browser memory only.")
+                            )
+                        )
+                    ),
+
+                    // Upload Zone
+                    React.createElement('div', {
+                        className: `relative border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 ease-in-out cursor-pointer
+                            ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white hover:border-slate-400'}
+                            ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`,
+                        onDragEnter: handleDrag,
+                        onDragLeave: handleDrag,
+                        onDragOver: handleDrag,
+                        onDrop: handleDrop
+                    },
+                        React.createElement('input', { type: "file", id: "file-upload", className: "hidden", accept: "application/pdf", onChange: handleChange }),
+                        React.createElement('label', { htmlFor: "file-upload", className: "cursor-pointer flex flex-col items-center justify-center h-full w-full" },
+                            isProcessing ? React.createElement('div', { className: "flex flex-col items-center space-y-4" },
+                                React.createElement(Loader2, { className: "w-12 h-12 text-blue-600 animate-spin" }),
+                                React.createElement('span', { className: "text-lg font-medium text-slate-700" }, "Analyzing PDF...")
+                            ) : React.createElement(React.Fragment, null,
+                                React.createElement(Upload, { className: "w-12 h-12 text-slate-400 mb-4" }),
+                                React.createElement('span', { className: "text-lg font-medium text-slate-700" }, fileName ? fileName : "Drag & Drop your PDF here"),
+                                React.createElement('span', { className: "text-sm text-slate-500 mt-2" }, fileName ? "Click to change file" : "or click to browse")
+                            )
+                        )
+                    ),
+
+                    // Error Message
+                    error && React.createElement('div', { className: "bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2" },
+                        React.createElement(AlertCircle, { className: "w-5 h-5" }),
+                        error
+                    ),
+
+                    // AI Analysis Panel
+                    analysisResult && React.createElement('div', { className: "bg-white border border-purple-100 rounded-xl shadow-sm p-6 animate-in" },
+                         React.createElement('div', { className: "flex items-center gap-2 mb-4 border-b border-purple-50 pb-2" },
+                            React.createElement(Sparkles, { className: "w-5 h-5 text-purple-600" }),
+                            React.createElement('h2', { className: "text-lg font-semibold text-slate-800" }, "AI Analysis Report")
+                         ),
+                         React.createElement('div', { 
+                            className: "prose prose-sm max-w-none text-slate-600",
+                            dangerouslySetInnerHTML: { __html: marked.parse(analysisResult) }
+                         })
+                    ),
+
+                    // Data Table
+                    data.length > 0 && React.createElement('div', { className: "bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-in" },
+                        // Toolbar
+                        React.createElement('div', { className: "p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center bg-slate-50 gap-4" },
+                            React.createElement('div', { className: "flex items-center gap-2 text-slate-700 font-semibold" },
+                                React.createElement(FileText, { className: "w-5 h-5" }),
+                                React.createElement('span', null, `Extracted Data (${data.length} rows)`)
+                            ),
+                            React.createElement('div', { className: "flex gap-2" },
+                                React.createElement('button', {
+                                    onClick: handleAnalyzeData,
+                                    disabled: isAnalyzing,
+                                    className: "flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm disabled:opacity-50"
+                                }, 
+                                    isAnalyzing ? React.createElement(Loader2, { className: "w-4 h-4 animate-spin" }) : React.createElement(Sparkles, { className: "w-4 h-4" }),
+                                    "AI Insights"
+                                ),
+                                React.createElement('button', {
+                                    onClick: downloadCSV,
+                                    className: "flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
+                                }, React.createElement(Download, { className: "w-4 h-4" }), "Export CSV")
+                            )
+                        ),
+                        // Table
+                        React.createElement('div', { className: "overflow-x-auto" },
+                            React.createElement('table', { className: "w-full text-left text-sm" },
+                                React.createElement('thead', null,
+                                    React.createElement('tr', { className: "bg-slate-50 border-b border-slate-200" },
+                                        ["Name", "Matricule", "Type", "Acquis", "Pris", "Solde", "Actions"].map(h => 
+                                            React.createElement('th', { key: h, className: "px-6 py-4 font-semibold text-slate-600" }, h)
+                                        )
+                                    )
+                                ),
+                                React.createElement('tbody', { className: "divide-y divide-slate-100" },
+                                    data.map((row, idx) => 
+                                        React.createElement('tr', { key: idx, className: "hover:bg-slate-50 transition-colors" },
+                                            React.createElement('td', { className: "px-6 py-4 font-medium text-slate-900" }, row.name),
+                                            React.createElement('td', { className: "px-6 py-4 text-slate-600" }, row.matricule),
+                                            React.createElement('td', { className: "px-6 py-4" },
+                                                React.createElement('span', {
+                                                    className: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                        ${row.type === 'RTT' ? 'bg-purple-100 text-purple-800' : 
+                                                        row.type === 'Congés N' ? 'bg-green-100 text-green-800' : 
+                                                        'bg-blue-100 text-blue-800'}`
+                                                }, row.type)
+                                            ),
+                                            React.createElement('td', { className: "px-6 py-4 text-slate-600" }, row.acquis),
+                                            React.createElement('td', { className: "px-6 py-4 text-slate-600" }, row.pris),
+                                            React.createElement('td', { className: "px-6 py-4 font-semibold text-slate-900" }, row.solde),
+                                            React.createElement('td', { className: "px-6 py-4" },
+                                                React.createElement('button', {
+                                                    onClick: () => handleDraftEmail(row),
+                                                    className: "text-purple-600 hover:text-purple-800 flex items-center gap-1 text-xs font-medium border border-purple-200 px-2 py-1 rounded bg-purple-50 hover:bg-purple-100 transition"
+                                                }, React.createElement(Sparkles, { className: "w-3 h-3" }), "Email")
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+
+                    // Email Modal
+                    emailModal.open && React.createElement('div', { className: "fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in" },
+                        React.createElement('div', { className: "bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden" },
+                            React.createElement('div', { className: "p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50" },
+                                React.createElement('h3', { className: "font-semibold text-slate-800 flex items-center gap-2" },
+                                    React.createElement(Mail, { className: "w-4 h-4 text-purple-600" }),
+                                    `Draft to ${emailModal.employee}`
+                                ),
+                                React.createElement('button', { onClick: () => setEmailModal({...emailModal, open: false}), className: "text-slate-400 hover:text-slate-600" }, React.createElement(X, { className: "w-5 h-5" }))
+                            ),
+                            React.createElement('div', { className: "p-6" },
+                                emailModal.loading ? React.createElement('div', { className: "flex flex-col items-center justify-center py-8 space-y-4" },
+                                    React.createElement(Loader2, { className: "w-8 h-8 text-purple-600 animate-spin" }),
+                                    React.createElement('p', { className: "text-sm text-slate-500" }, "Gemini is drafting your email...")
+                                ) : React.createElement('textarea', {
+                                    className: "w-full h-64 p-4 border border-slate-200 rounded-lg text-sm leading-relaxed focus:ring-2 focus:ring-purple-500 outline-none resize-none bg-slate-50",
+                                    value: emailModal.content,
+                                    readOnly: true
+                                })
+                            ),
+                            !emailModal.loading && React.createElement('div', { className: "p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2" },
+                                React.createElement('button', {
+                                    onClick: () => { navigator.clipboard.writeText(emailModal.content); alert("Copied!"); },
+                                    className: "px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition"
+                                }, "Copy Text")
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(PayslipParser));
+    </script>
+</body>
+</html>
