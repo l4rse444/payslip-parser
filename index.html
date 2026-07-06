@@ -3,20 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Decode your payslip — Payslip Decoded</title>
-<meta name="description" content="Drop your German, Austrian or Swiss payslip PDF and get every line explained in plain English. Parsed entirely in your browser.">
+<title>Understand your payslip — Voi</title>
+<meta name="description" content="Drop your Voi payslip and tap any line to see what it means. Germany, Austria and Switzerland — detected automatically, processed on your device.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Sora:300,400,600,700" rel="stylesheet" type="text/css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
-    --paper:#FFFFFF;--page:#F6F5F1;--ink:#16181D;--ink-soft:#5A6069;--rule:#E3E1DA;
-    --blue:#2D4A8A;--blue-soft:#EAEEF7;--marker:#FFE873;--green:#1E7F4F;--red:#B4443C;
-    --radius:10px;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'Space Grotesk',system-ui,sans-serif;
+    --paper:#FFFFFF;--page:#faf4ec;--ink:#282425;--ink-soft:#787475;--rule:#e8e4e5;
+    --blue:#455f85;--blue-soft:#e9eef5;--marker:#f8b3ad;--green:#008545;--red:#8d0601;
+    --coral:#f26961;--rose:#f8b3ad;
+    --radius:12px;--mono:'Sora',sans-serif;--sans:'Sora',sans-serif;
   }
+  .l-amt,.totals,.l-nm .code{font-variant-numeric:tabular-nums}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:var(--sans);background:var(--page);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  body{font-family:'Sora',sans-serif;font-weight:300;background:var(--page);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  b,strong,summary,button,.btn{font-weight:600}
   .wrap{max-width:860px;margin:0 auto;padding:0 20px}
   header{border-bottom:1px solid var(--rule);background:var(--paper)}
   .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 0;gap:16px;flex-wrap:wrap}
@@ -25,24 +28,24 @@
   .logo span{font-family:var(--mono);font-size:11px;color:var(--ink-soft);border:1px solid var(--rule);border-radius:4px;padding:1px 7px}
   .back{font-size:13px;color:var(--blue);text-decoration:none}
   .hero{padding:38px 0 6px;max-width:640px}
-  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--coral);margin-bottom:10px}
   h1{font-size:clamp(25px,4vw,36px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
   h1 .mk{background:linear-gradient(transparent 58%,var(--marker) 58%)}
   .sub{margin-top:12px;color:var(--ink-soft);font-size:15px}
   .privacy{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-family:var(--mono);font-size:12px;background:#EAF4EE;border:1px solid #BFDCCB;color:var(--green);border-radius:99px;padding:6px 14px}
 
   .drop{margin:24px 0 8px;border:2px dashed var(--rule);border-radius:var(--radius);background:var(--paper);padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
-  .drop.over{border-color:var(--blue);background:var(--blue-soft)}
+  .drop.over{border-color:var(--coral);background:#ffdcd9}
   .drop h2{font-size:16px;font-weight:600}
   .drop p{font-size:13px;color:var(--ink-soft);margin-top:5px}
-  .drop .btn{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:13px;background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px}
+  .drop .btn{display:inline-block;margin-top:12px;font-size:13px;font-weight:600;background:var(--coral);color:#fff;border-radius:99px;padding:11px 22px}
   #fileInput{display:none}
   .status{font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin:10px 0;min-height:20px}
   .status.err{color:var(--red)}
 
   /* ---------- decoded slip: accordion document ---------- */
   .slipdoc{background:var(--paper);border:1px solid var(--rule);border-radius:4px;box-shadow:0 1px 2px rgba(22,24,29,.05),0 12px 28px -18px rgba(22,24,29,.25);margin:14px 0 30px;overflow:hidden}
-  .slip-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:2px solid var(--ink)}
+  .slip-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:3px solid var(--coral)}
   .slip-head .t{font-family:var(--mono);font-size:14px;font-weight:600}
   .slip-head .cc{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
   .totals{display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);padding:14px 20px;background:#FBFAF6;border-bottom:1px solid var(--rule)}
@@ -61,7 +64,7 @@
   .l-amt.neg{color:var(--red)}
   .l-caret{color:var(--ink-soft);font-size:11px;transition:transform .15s}
   details.line[open] .l-caret{transform:rotate(90deg)}
-  details.line[open] summary{background:var(--blue-soft)}
+  details.line[open] summary{background:#fdf1ef}
   details.line[open] summary .l-nm{position:relative}
   details.line[open] summary .l-nm::after{content:"";position:absolute;inset:-2px -6px;background:var(--marker);opacity:.45;border-radius:3px;z-index:-1}
   .l-body{padding:4px 20px 16px;font-family:var(--sans)}
@@ -79,7 +82,7 @@
   .pastebox label{font-size:13px;font-weight:600;display:block;margin-bottom:8px}
   .pasterow{display:flex;gap:8px;flex-wrap:wrap}
   .pastebox input{flex:1;min-width:220px;font-family:var(--mono);font-size:13.5px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px}
-  .pastebox button{font-family:var(--sans);font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;border:0;background:var(--blue);color:#fff;cursor:pointer}
+  .pastebox button{font-family:var(--sans);font-weight:600;font-size:14px;padding:10px 20px;border-radius:99px;border:0;background:var(--coral);color:#fff;cursor:pointer}
   input:focus,button:focus-visible,.drop:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
   .pastebox .hint{font-size:12px;color:var(--ink-soft);margin-top:8px}
   footer{border-top:1px solid var(--rule);padding:24px 0 40px;font-size:12.5px;color:var(--ink-soft)}
@@ -90,17 +93,17 @@
 
 <header>
   <div class="wrap hd">
-    <div class="logo"><b>Payslip&nbsp;Decoded</b><span>🇩🇪 🇦🇹 🇨🇭 · beta</span></div>
-    <a class="back" href="index.html">← Net salary calculator</a>
+    <div class="logo"><b style="color:var(--coral);font-size:26px;letter-spacing:-.02em">voi.</b><span>payslip explained · beta</span></div>
+    <span style="font-size:13px;color:var(--ink-soft)">People &amp; payroll team</span>
   </div>
 </header>
 
 <main class="wrap">
   <section class="hero">
-    <div class="eyebrow">Germany · Austria · Switzerland</div>
-    <h1>Drop your payslip. <span class="mk">Tap any line to understand it.</span></h1>
-    <p class="sub">Your payslip, rebuilt on screen — with every wage type, supplement and deduction explained in plain English. The country and format are detected automatically.</p>
-    <div class="privacy">🔒 100% in your browser — the file is never uploaded anywhere</div>
+    <div class="eyebrow" style="color:var(--coral)">For everyone at Voi · Germany, Austria and Switzerland</div>
+    <h1>Understand your payslip</h1>
+    <p class="sub" style="font-weight:400">Drop your payslip below, then tap any line to see what it means — every wage type, supplement and deduction in plain language. We detect the country automatically.</p>
+    <div class="privacy">🔒 Your payslip stays on your device — nothing is uploaded or stored</div>
   </section>
 
   <div class="drop" id="drop" role="button" tabindex="0" aria-label="Drop a payslip PDF here or click to choose a file">
@@ -113,7 +116,7 @@
   <div id="results"></div>
 
   <div class="pastebox">
-    <label for="pasteIn">No PDF at hand, or a different format? Paste any payslip line:</label>
+    <label for="pasteIn">No PDF to hand? Paste the line you want explained:</label>
     <div class="pasterow">
       <input id="pasteIn" placeholder='e.g. "Urlaubszuschuss", "Quellensteuer" or "101 Zuschlag 25%"'>
       <button id="pasteBtn" type="button">Explain it</button>
@@ -125,8 +128,9 @@
 
 <footer>
   <div class="wrap">
-    <p><b>Estimates and general explanations, not tax or legal advice.</b> Line classification uses the printed flags and rates where available, plus keyword matching. Company-specific wage types may be explained generically. Multi-slip PDFs: only the first payslip is decoded. Swiss child allowances and withholding-tax tariffs vary by canton; Austrian collective-agreement supplements vary by Kollektivvertrag.</p>
-    <p>Parsing runs entirely on your device via pdf.js. Nothing you drop here is transmitted, stored, or logged.</p>
+    <p><b>This is general information, not tax or personal advice.</b> Amounts and rates come from your payslip; explanations describe the usual rules in your country. Some details depend on your canton, Kollektivvertrag or personal situation.</p>
+    <p>Still unsure about a line, or spotted something that looks wrong? <a href="https://voidev.atlassian.net/servicedesk/customer/portal/35" style="color:var(--coral)">Raise a Payroll ticket</a> — include the wage type number, the month and where you see the issue, and we’ll take a look. Payroll-relevant changes need to be in HiBob by the 5th of the month. Your payslips live in the Papaya portal; vacation balances are in Workforce (Warehouse and Field Operations) or HiBob (everyone else).</p>
+    <p>Everything runs on your device. Your payslip is never uploaded, stored or logged.</p>
   </div>
 </footer>
 
@@ -256,7 +260,50 @@ function parseAT(lines){
 }
 /*PARSERS-END*/
 
-/* ================= EXPLANATION ENGINE ================= */
+/* ---------- Voi-specific layer (source: Voihalla — Payroll & Benefits pages) ---------- */
+const R_VOI=[
+ {fmt:'DE',re:/sachbezug/i,title:'Your benefit (Edenred / Urban Sports Club)',
+  body:'Voi\u2019s non-cash benefits appear here: \u20ac25.00 is your Edenred benefit, \u20ac5.30 is Urban Sports Club \u2014 if you have both, you\u2019ll see two lines. They\u2019re tax- and contribution-free (together well under the \u20ac50 monthly limit) and each is added here, then deducted again under Netto-Bez\u00fcge/Netto-Abz\u00fcge. The pair cancels out \u2014 the benefit is on top of your pay, not part of it.',
+  law:'\u00a78 Abs. 2 S. 11 EStG',tip:'Nothing to do \u2014 the add-and-deduct pair just satisfies German reporting rules.'},
+ {fmt:'DE',re:/firmenrabatt/i,title:'Voi4Business \u2014 your free rides',
+  body:'Unlimited Voi rides while you\u2019re employed, reported at a value of \u20ac29 a month. Like the Edenred line, it\u2019s added here and deducted again in the net section \u2014 it never changes what lands in your account.',
+  law:'\u00a78 Abs. 3 EStG',tip:'Not added to Voi4Business yet? Ask your manager \u2014 everyone joins on day one.'},
+ {fmt:'DE',re:/betr\.?\s?av|bav/i,title:'Your Allianz company pension',
+  body:'Voi pays 4.5% of your salary into your Allianz pension fund every month once you\u2019ve passed probation \u2014 for part-time and full-time employees alike. The \u201cAG\u201d lines are Voi\u2019s money (tax-free, flag N means it flows to the pension contract, not your account); any \u201cAN\u201d lines are your own additional contributions.',
+  law:'\u00a73 Nr. 63 EStG; \u00a71a BetrAVG',tip:'This is on top of your gross salary \u2014 if you don\u2019t see line 600 after probation, raise a Payroll ticket.'},
+ {fmt:'DE',re:/zuschlag|nightshift|overtime|\u00fcberstund/i,title:'Supplements & overtime \u2014 paid one month later',
+  body:'Night, Sunday and holiday supplements and overtime are paid one month in arrears \u2014 June hours arrive with your July payslip \u2014 because time reports must be confirmed first. Night/Sunday/holiday supplements are tax-free within legal limits (\u00a73b EStG); overtime itself is normal taxable pay. Your hourly rate = (monthly salary \u00f7 4.33) \u00f7 weekly hours.',
+  law:'\u00a73b EStG',tip:'Checking a supplement? Compare the Menge (quantity) column against last month\u2019s confirmed time report, not this month\u2019s.'},
+ {fmt:'DE',re:/abschlag|vorschuss|advance/i,title:'New-starter advance',
+  body:'If your setup wasn\u2019t complete in time for your first payroll run, Voi pays an advance based on your HiBob data. It won\u2019t exactly match your real salary \u2014 the correct amount is calculated next month and the advance is settled against it, which is what this line shows.',
+  law:'\u2014',tip:'Something looks off? Raise a Payroll ticket with the exact amounts.'},
+ {fmt:'AT',re:/performance bonus/i,title:'Performance bonus',
+  body:'Your Voi performance bonus. As a special payment it can use the privileged 6% tax rate while it fits within your annual sixth (Jahressechstel) \u2014 in a month that also carries the Urlaubszuschuss, part may spill into normal taxation.',
+  law:'\u00a767 EStG',tip:null},
+ {fmt:'AT',re:/referral/i,title:'Referral bonus',
+  body:'Thanks for bringing someone on board! Under the Global Referral Program the bonus is \u20ac3,000 for office roles, \u20ac1,000 for warehouse and fixed-term roles over 3 months, and \u20ac300 + \u20ac700 in two instalments for shorter contracts that get extended. It\u2019s triggered when your referral completes 3 months at Voi, processed within 4\u20136 weeks, and lands on the following month\u2019s payslip. As a special payment it can use the privileged 6% rate within your Jahressechstel.',
+  law:'\u00a767 EStG; Global Referral Policy',tip:'Bonus not showing 6 weeks after your referral\u2019s 3-month mark? Raise a Payroll ticket. You must still be employed at Voi on the payout date.'},
+ {fmt:'DE',re:/referral/i,title:'Referral bonus',
+  body:'Thanks for bringing someone on board! Under the Global Referral Program the bonus is \u20ac3,000 for office roles, \u20ac1,000 for warehouse and fixed-term roles over 3 months, and \u20ac300 + \u20ac700 in two instalments for shorter contracts that get extended. It\u2019s triggered when your referral completes 3 months at Voi, processed within 4\u20136 weeks, and lands on the following month\u2019s payslip. It\u2019s taxed as a one-off payment \u2014 expect a deduction spike this month that evens out in your tax return.',
+  law:'\u00a739b Abs. 3 EStG; Global Referral Policy',tip:'Bonus not showing 6 weeks after your referral\u2019s 3-month mark? Raise a Payroll ticket. You must still be employed at Voi on the payout date.'},
+ {fmt:'AT',re:/zuschlag\s*25/i,title:'25% supplement \u2014 part-time extra hours',
+  body:'The statutory 25% supplement for additional hours worked as a part-time employee (Mehrarbeit) \u2014 hours above your contracted time but below full-time. It\u2019s taxable and insurable, and paid at your average rate. Full overtime beyond full-time hours pays 50% or more under the Handels-KV.',
+  law:'\u00a719d Abs. 3a AZG',tip:'The quantity column shows the extra hours \u2014 compare it against your own records.'},
+ {fmt:'AT',re:/zuschlag\s*100/i,title:'100% supplement (Handels-KV)',
+  body:'Under the Handels-KV, overtime between 20:00 and 06:00 and on Sundays and public holidays carries a 100% supplement \u2014 double pay for those hours. (Base overtime is 50%; extended-opening-hours work can be 70%.) \u201cpfl.\u201d means taxable and insurable; up to \u20ac200 a month of qualifying overtime premiums can be tax-free under \u00a768 (2).',
+  law:'Handels-KV; \u00a768 (2) EStG',tip:null},
+ {fmt:'AT',re:/urlaubszuschuss/i,title:'Holiday pay (Urlaubszuschuss) \u2014 your 13th salary',
+  body:'Your Handels-KV holiday allowance: a full month\u2019s salary (pro-rata in your first year), due at your first vacation and no later than 30 June \u2014 which is why it\u2019s on this payslip. The Weihnachtsremuneration (14th salary) follows by 1 December. Both are taxed at the privileged flat 6% (first \u20ac620 a year tax-free) while they fit your Jahressechstel, with social insurance at the lower special-payment rate.',
+  law:'Handels-KV Abschnitt 6; \u00a767 EStG',tip:'Roughly double gross but far less than double deductions this month \u2014 that\u2019s the 6% rate doing its job.'},
+
+ {fmt:'CH',re:/pf\/lob|bvg/i,title:'Your AXA pension fund (BVG)',
+  body:'Your occupational pension contribution to Voi\u2019s AXA pension fund \u2014 a fixed franc amount set by age band and the plan, with Voi paying at least as much again. The plan also insures you: a disability pension of 50% of salary (contributions waived after a 3-month wait), a spouse/partner pension of 60% and orphans\u2019 pensions of 20% of the retirement pension.',
+  law:'BVG/LOB',tip:'Your yearly AXA pension certificate shows your balance and buy-in potential \u2014 buy-ins are one of the few big Swiss tax deductions.'},
+ {fmt:'CH',re:/dsa|ktg|daily sickness/i,title:'Sickness daily allowance (KTG) \u2014 Voi plan',
+  body:'This premium funds Voi\u2019s collective sickness insurance: if you\u2019re ill long-term, it pays 80% of your salary from day 30 for up to 730 days, on insured earnings up to CHF 300,000. Voi covers the gap during the first 30 days.',
+  law:'Art. 324a/b OR',tip:'Accidents are covered separately (UVG, from day 3) \u2014 that one costs you nothing on this slip.'},
+];
+
 const R_AT=[
  {re:/^\[Arrears\]/i,title:'Correction for a previous month (Aufrollung)',
   body:'This line re-calculates an earlier month — corrected hours, late sick leave, or backdated changes. Tax and social insurance for it are shown as separate "Previous" positions in the deduction block.',
@@ -270,7 +317,7 @@ const R_AT=[
  {re:/nachtzulage|freibetrag\s*§?68/i,title:'Night allowance & its §68 tax exemption',
   body:'These two lines work as a pair: the night allowance (Nachtzulage) is added to your pay, and the "Freibetrag §68 (1)" line subtracts the same amount from your tax base only — up to €360 per month for qualifying night/Sunday/holiday supplements and dirt/hardship/danger bonuses. You receive the money; the negative line just makes it tax-free.',
   law:'§68 (1) EStG',tip:'A negative line on your payslip here is good news — it is removing tax, not pay.'},
- {re:/zuschlag\s*100|überstunden.*100|feiertag\s*100/i,title:'100% supplement (overtime/holiday premium)',
+ {re:/zuschlag\s*100|überstunden.*100|feiertag\s*100(?!.*schnitt)/i,title:'100% supplement (overtime/holiday premium)',
   body:'Work on public holidays or qualifying overtime paid with a 100% premium per your Kollektivvertrag. "pfl." on the line means taxable/insurable (pflichtig) — only the first €200/month of the premium portion of qualifying overtime supplements can be tax-free under §68 (2).',
   law:'§68 (2) EStG; Kollektivvertrag',tip:'The base hour and the premium are often split across lines — compare the Quantity column against your own records.'},
  {re:/zuschlag\s*25/i,title:'25% supplement',
@@ -303,8 +350,8 @@ const R_AT=[
 ];
 const R_CH=[
  {re:/monthly wage|monatslohn/i,title:'Monthly base salary',
-  body:'Your contractual gross for the month. Swiss deductions are lean by European standards — but note there is no health insurance on the payslip: you pay your Krankenkasse premium privately.',
-  law:'Art. 322 OR',tip:'When comparing Swiss net to German/Austrian net, subtract your private health premium (typically CHF 300–500/month) from the Swiss figure for a fair comparison.'},
+  body:'Your contractual gross for the month — the base for the percentage deductions below. One thing to remember: your health insurance (Krankenkasse) is not on this payslip; you pay that premium privately, directly to your insurer.',
+  law:'Art. 322 OR',tip:'When planning your monthly budget, set your Krankenkasse premium aside from your net — it never appears here.'},
  {re:/hourly wage|stundenlohn/i,title:'Hourly wage',
   body:'Base pay as hours × rate. For hourly staff, vacation and public-holiday entitlements are paid as percentage supplements on top (see the entitlement lines).',
   law:'Art. 319 ff. OR',tip:'Check the hours against your own records — the grey sub-line repeats the calculation for transparency.'},
@@ -342,7 +389,7 @@ const R_CH=[
   body:'When the daily-sickness insurer pays benefits, the slip adds the benefit and books a correction — benefits are not subject to social contributions, so the pair shifts your contribution base rather than your payout.',
   law:'Art. 324a/b OR',tip:'Check that the OASI base (Number column) is lower than gross in such months — that is the correction working correctly.'},
  {re:/wage paid|net salary/i,title:'Net salary / wage paid',
-  body:'What lands in your account. Remember: unlike Germany or Austria, Swiss health insurance is not deducted here — budget your Krankenkasse premium separately.',
+  body:'What lands in your account. Remember that your health insurance premium isn\u2019t deducted here — you pay your Krankenkasse directly, so budget it separately from your net.',
   law:'—',tip:null},
  {re:/vacation balance/i,title:'Vacation balance (info)',
   body:'Informational running balance of vacation days — accrued vs. taken. A negative number means vacation taken in advance.',
@@ -377,7 +424,8 @@ const R_DE=[
 ];
 const FALLBACK={title:'Company-specific wage type',body:'This label doesn\'t match standard payroll vocabulary — likely a company-specific item. The amount and any flags still tell you how it is treated.',law:'—',tip:'Ask payroll for this wage type\'s definition; every code has one.'};
 function explain(desc,fmt){
-  const sets=fmt==='AT'?[R_AT,R_DE]:fmt==='CH'?[R_CH,R_DE]:[R_DE,R_AT,R_CH];
+  for(const r of R_VOI) if((r.fmt===fmt||fmt==='ALL')&&r.re.test(desc)) return r;
+  const sets=fmt==='AT'?[R_AT]:fmt==='CH'?[R_CH]:fmt==='DE'?[R_DE]:[R_DE,R_AT,R_CH];
   for(const set of sets) for(const r of set) if(r.re.test(desc)) return r;
   return FALLBACK;
 }
@@ -415,7 +463,7 @@ fi.addEventListener('change',()=>{if(fi.files[0])handleFile(fi.files[0]);});
 
 async function handleFile(file){
   results.innerHTML='';status.classList.remove('err');
-  if(file.type!=='application/pdf'){status.textContent='That is not a PDF.';status.classList.add('err');return;}
+  if(file.type!=='application/pdf'){status.textContent='That file isn\u2019t a PDF \u2014 download your payslip as a PDF and try again.';status.classList.add('err');return;}
   status.textContent='Reading '+file.name+' locally…';
   try{
     const buf=await file.arrayBuffer();
@@ -432,7 +480,7 @@ async function handleFile(file){
     const r=(fmt==='CH'?parseCH:fmt==='AT'?parseAT:parseDE)(lines);
     renderSlip(r,lines,pdf.numPages);
   }catch(err){
-    status.textContent='Could not read this PDF ('+err.message+'). Scanned/photographed payslips are not supported yet.';
+    status.textContent='Could not read this PDF ('+err.message+'). Photos and scans aren\u2019t supported yet \u2014 use the original PDF.';
     status.classList.add('err');
   }
 }
@@ -472,7 +520,7 @@ function lineHTML(l,fmt){
 }
 function renderSlip(r,lines,totalPages){
   if(!r.pay.length){
-    status.textContent='No wage lines found — this layout isn\'t recognised yet. Use the paste box below for individual lines.';
+    status.textContent='We couldn\u2019t read this layout yet \u2014 paste the line you\u2019re unsure about below, or raise a ticket with the People team.';
     status.classList.add('err');return;
   }
   status.textContent='Decoded locally ✓'+(totalPages>1?` (file has ${totalPages} pages — showing the first payslip)`:'');
@@ -486,10 +534,10 @@ function renderSlip(r,lines,totalPages){
       ${r.totals.net?`<div><b>Net</b><span class="netv">${r.totals.net} ${CUR[r.fmt]}</span></div>`:''}
       <div><b>Lines decoded</b><span>${r.pay.length+r.info.length}</span></div>
     </div>`;
-  if(earnings.length){html+=`<div class="sec-label">Earnings & payments</div>`;earnings.forEach(l=>html+=lineHTML(l,r.fmt));}
-  if(deductions.length){html+=`<div class="sec-label">Deductions & offsets</div>`;deductions.forEach(l=>html+=lineHTML(l,r.fmt));}
-  if(r.info.length){html+=`<div class="sec-label">Further positions</div>`;r.info.forEach(l=>html+=lineHTML(l,r.fmt));}
-  html+=`<div class="slip-foot">Tap any line to expand its explanation. Amounts and rates are read from your slip; explanations are general information for ${CNAME[r.fmt].slice(5)}.</div></div>`;
+  if(earnings.length){html+=`<div class="sec-label">Earnings and payments</div>`;earnings.forEach(l=>html+=lineHTML(l,r.fmt));}
+  if(deductions.length){html+=`<div class="sec-label">Deductions and offsets</div>`;deductions.forEach(l=>html+=lineHTML(l,r.fmt));}
+  if(r.info.length){html+=`<div class="sec-label">Other positions</div>`;r.info.forEach(l=>html+=lineHTML(l,r.fmt));}
+  html+=`<div class="slip-foot">Tap a line to see what it means. Amounts come straight from your slip; explanations are general information for ${CNAME[r.fmt].slice(5)}.</div></div>`;
   results.innerHTML=html;
   results.scrollIntoView({behavior:'smooth',block:'start'});
 }
