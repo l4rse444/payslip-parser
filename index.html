@@ -196,11 +196,13 @@ function explain(desc){
   return {title:'Company-specific wage type', body:'This label doesn\'t match standard German payroll vocabulary — it is likely a company-specific item. The tax/SV flag badges above still tell you how it is treated.', law:'—', tip:'Ask payroll for this Lohnart\'s definition; every code has one.'};
 }
 
-/* ---------- flag badges ---------- */
+/* ---------- flag badges (full LOGN17 legend) ---------- */
+const TXMAP={F:['b-free','TAX-FREE'],L:['b-tax','TAXABLE'],S:['b-tax','ONE-OFF (annualised tax)'],E:['b-tax','ONE-OFF (annualised tax)'],P:['b-info','FLAT-RATE TAXED'],A:['b-info','SEVERANCE RULES'],M:['b-info','MULTI-YEAR PAY'],N:['b-info','RETRO'],V:['b-info','PRIOR YEAR'],W:['b-info','TIME-CREDIT']};
+const SOMAP={F:['b-free','SV-FREE'],L:['b-tax','SV-LIABLE'],S:['b-tax','SV ONE-OFF'],E:['b-tax','SV ONE-OFF'],N:['b-info','SV RETRO'],V:['b-info','SV PRIOR YEAR']};
 function badges(tx,so,tg){
   const b=[];
-  if(tx==='F') b.push(['b-free','TAX-FREE']); else if(tx==='L') b.push(['b-tax','TAXABLE']);
-  if(so==='F') b.push(['b-free','SV-FREE']);  else if(so==='L') b.push(['b-tax','SV-LIABLE']);
+  if(TXMAP[tx]) b.push(TXMAP[tx]);
+  if(SOMAP[so]) b.push(SOMAP[so]);
   if(tg==='J') b.push(['b-info','IN GROSS']); else if(tg==='N') b.push(['b-info','NOT IN GROSS']);
   return b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
 }
@@ -235,7 +237,7 @@ async function handleFile(file){
       const page=await pdf.getPage(p);
       const tc=await page.getTextContent();
       lines=lines.concat(reconstructLines(tc.items));
-      if(p===1 && parsePayments(lines).length) break; // first page had the payments block
+      if(p===1 && parseAllLines(lines).pay.length) break; // first page had wage lines
     }
     renderSlip(lines, pdf.numPages);
   }catch(err){
@@ -264,54 +266,77 @@ function reconstructLines(items){
   });
 }
 
-/* wage lines: code + description ... [flags] amount */
+/* wage lines: token-based, no section gating — validated on both DE/EN templates */
+const FLAGCHARS='LSFEPAMNVW';
+const UNITS=new Set(['Std','Tage','Tg','Km','St','T','EUR','Tsd','Mio']);
+const AMT_END=/^(\d{1,3}(?:\.\d{3})*,\d{2})(-?)$/;
 const AMT=/(\d{1,3}(?:\.\d{3})*,\d{2})-?\s*$/;
-function parsePayments(lines){
-  const out=[]; let inPay=false;
-  for(const ln of lines){
-    if(/^\s*(Payments|Bezüge)\b/.test(ln)){inPay=true;continue;}
-    if(/(Total gross income|Gesamtbrutto)/.test(ln)) inPay=false;
-    if(!inPay) continue;
-    const m=ln.match(/^\s*(\d{3,4})\s+(.+?)\s{2,}/);
-    const a=ln.match(AMT);
-    if(m && a && !/^[\d\s./-]+$/.test(m[2])){
-      const f=ln.match(/\s([LF])\s+([LF])\s+([JN])\s/) || [];
-      out.push({code:m[1],desc:m[2].trim(),amt:a[1]+(ln.trim().endsWith('-')?'-':''),tx:f[1]||'',so:f[2]||'',tg:f[3]||''});
-    }
+function parseWageLine(ln){
+  const tokens=ln.trim().split(/\s+/);
+  if(tokens.length<3||!/^\d{3,4}$/.test(tokens[0])) return null;
+  const last=tokens[tokens.length-1].match(AMT_END);
+  if(!last) return null;
+  let mid=tokens.slice(1,-1), singles=[];
+  while(mid.length){
+    const t=mid[mid.length-1];
+    if(t.length===1&&(FLAGCHARS.includes(t)||t==='J'||t==='N')){singles.unshift(t);mid.pop();continue;}
+    if((/^[\d.,-]+$/.test(t)&&!t.includes('%'))||UNITS.has(t)){mid.pop();continue;}
+    break;
   }
-  return out;
+  const desc=mid.join(' ');
+  if((desc.match(/[A-Za-zÄÖÜäöüß]/g)||[]).length<2) return null;
+  let tx='',so='',tg='';
+  if(singles.length>=3){[tx,so,tg]=singles.slice(-3);}
+  else if(singles.length===1){tg=singles[0];}
+  if(tg&&tg!=='J'&&tg!=='N'){tx=so;so=tg;tg='';}
+  return {code:tokens[0],desc,amt:last[1]+last[2],tx,so,tg};
 }
-function parse99(lines){
-  const out=[];
+const MID99=/(99\d{2})\s+([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß./ -]{2,39}?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})(-?)(?:\s|$)/;
+function parseAllLines(lines){
+  const pay=[],info=[],seen=new Set();
   for(const ln of lines){
-    const m=ln.match(/(99\d{2})\s+([A-Za-zÄÖÜäöüß./ -]{3,40}?)\s{2,}(\d{1,3}(?:\.\d{3})*,\d{2})(-?)\s*$/);
-    if(m) out.push({code:m[1],desc:m[2].trim(),amt:m[3]+m[4],tx:'',so:'',tg:''});
+    const r=parseWageLine(ln);
+    if(r&&!r.code.startsWith('99')){pay.push(r);continue;}
+    const m=ln.match(MID99);
+    if(m){const key=m[1]+m[2]+m[3];if(!seen.has(key)){seen.add(key);info.push({code:m[1],desc:m[2].trim(),amt:m[3]+m[4],tx:'',so:'',tg:''});}}
   }
-  return out;
+  return {pay,info};
 }
+const toNum=s=>parseFloat(s.replace(/\./g,'').replace(',','.'));
 function grab(lines,label){
   for(const ln of lines){
     if(ln.includes(label)){const a=ln.match(AMT); if(a) return a[1];}
   }
   return null;
 }
+function grabNet(lines){
+  const byLabel=grab(lines,'Auszahlungsbetrag')||grab(lines,'Net income');
+  if(byLabel) return byLabel;
+  // fallback: the bank transfer line (contains an IBAN) ends with the payout amount
+  for(const ln of lines){
+    if(/[A-Z]{2}\d{2}\s?\d{4}/.test(ln)){const a=ln.match(AMT); if(a) return a[1];}
+  }
+  return null;
+}
 
 function renderSlip(lines,total){
-  const pay=parsePayments(lines), extra=parse99(lines);
+  const {pay,info}=parseAllLines(lines);
   if(!pay.length){
-    status.textContent='No payments block found — this layout isn\'t recognised yet. Use the paste box below for individual lines.';
+    status.textContent='No wage lines found — this layout isn\'t recognised yet. Use the paste box below for individual lines.';
     status.classList.add('err'); return;
   }
   status.textContent='Decoded locally ✓'+(total>1?` (file has ${total} pages — showing the first payslip)`:'');
-  const month=(lines.find(l=>/(Pay Advice|Entgeltabrechnung)/.test(l))||'').match(/for (.+?\d{4})|für (.+?\d{4})/);
-  const gross=grab(lines,'Total gross income')||grab(lines,'Gesamtbrutto');
-  const net=grab(lines,'Net income')||grab(lines,'Auszahlungsbetrag')||grab(lines,'Netto');
+  const month=(lines.find(l=>/(Pay Advice|Abrechnung|Entgeltabrechnung)/.test(l))||'').match(/for (.+?\d{4})|für (.+?\d{4})/);
+  const grossPrinted=grab(lines,'Total gross income')||grab(lines,'Gesamt-Brutto')||grab(lines,'Gesamtbrutto');
+  const grossCalc=pay.filter(l=>l.tg==='J').reduce((a,l)=>a+toNum(l.amt),0);
+  const gross=grossPrinted||grossCalc.toLocaleString('de-DE',{minimumFractionDigits:2});
+  const net=grabNet(lines);
 
   let html='';
   if(month) html+=`<div class="slipmeta">Payslip period: ${month[1]||month[2]}</div>`;
-  if(gross||net) html+=`<div class="totals">${gross?`<div><b>Total gross</b><span>${gross} €</span></div>`:''}${net?`<div><b>Net pay</b><span class="netv">${net} €</span></div>`:''}<div><b>Lines decoded</b><span>${pay.length+extra.length}</span></div></div>`;
+  html+=`<div class="totals"><div><b>Total gross</b><span>${gross} €</span></div>${net?`<div><b>Net payout</b><span class="netv">${net} €</span></div>`:''}<div><b>Lines decoded</b><span>${pay.length+info.length}</span></div></div>`;
 
-  for(const l of pay.concat(extra)){
+  for(const l of pay.concat(info)){
     const ex=explain(l.desc);
     html+=`<div class="line-card">
       <div class="lc-top"><span class="lc-name"><span class="code">${l.code}</span>${l.desc}</span>
@@ -322,7 +347,7 @@ function renderSlip(lines,total){
       <div class="lc-law">Legal basis: ${ex.law}</div>
     </div>`;
   }
-  html+=`<p class="unparsed">Flags read from the slip: Tx/So <b>L</b> = liable, <b>F</b> = free · TG <b>J/N</b> = counted in total gross or not. Statutory deductions (wage tax, KV/PV/RV/AV) are explained line-by-line in the <a href="index.html">calculator</a>.</p>`;
+  html+=`<p class="unparsed">Flags read from the slip: St/SV <b>L</b> = regular liable, <b>S/E</b> = one-off, <b>F</b> = free, <b>P</b> = flat-rate, <b>N/V</b> = retro/prior year · GB <b>J/N</b> = counted in total gross or not. Statutory deductions (wage tax, KV/PV/RV/AV) are explained line-by-line in the <a href="index.html">calculator</a>.</p>`;
   results.innerHTML=html;
   results.scrollIntoView({behavior:'smooth',block:'start'});
 }
