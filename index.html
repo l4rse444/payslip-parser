@@ -101,6 +101,8 @@
   .bar .b-sv{background:#8FA3CE}
   .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);font-family:var(--mono)}
   .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+  .share{margin-left:auto;font-family:var(--mono);font-size:12px;padding:6px 12px;border:1px solid var(--rule);border-radius:99px;background:var(--paper);cursor:pointer;color:var(--ink)}
+  .share:hover{border-color:var(--blue);color:var(--blue)}
 
   /* ---------- explain panel ---------- */
   .explain{background:var(--blue-soft);border:1px solid #C9D4EC;border-radius:var(--radius);padding:20px 22px;margin-top:18px;min-height:120px}
@@ -180,7 +182,7 @@
           <option value="5">V — married, lower earner</option>
           <option value="6">VI — second job</option>
         </select>
-        <div class="note-v56" id="v56note">Classes V and VI use a special doubled-tariff procedure — this estimate doesn't support them yet. Shown as class I for now.</div>
+        <div class="note-v56" id="v56note">Classes V/VI: modelled with the statutory doubled-tariff method (§39b EStG), but without its low-income minimum-rate clauses — expect small deviations at low salaries.</div>
       </div>
 
       <div class="row2">
@@ -263,6 +265,7 @@
         <span><i style="background:var(--green)"></i>Net <b id="lgNet"></b></span>
         <span><i style="background:var(--blue)"></i>Taxes <b id="lgTax"></b></span>
         <span><i style="background:#8FA3CE"></i>Social insurance <b id="lgSv"></b></span>
+        <button class="share" id="shareBtn" type="button">⧉ Copy link to this calculation</button>
       </div>
 
       <div class="explain" id="explain">
@@ -296,7 +299,7 @@
 
 <footer>
   <div class="wrap">
-    <p><b>This is an estimate, not tax or legal advice.</b> It uses the official 2026 income tax tariff (§32a EStG) and 2026 social insurance parameters, but simplifies the exact wage-tax procedure (Programmablaufplan): tax classes V/VI, Kinderfreibeträge in the church tax/Soli calculation, private health insurance, company benefits and one-off payments are not yet modelled. Your payroll department's numbers win.</p>
+    <p><b>This is an estimate, not tax or legal advice.</b> It uses the official 2026 income tax tariff (§32a EStG) and 2026 social insurance parameters, but simplifies the exact wage-tax procedure (Programmablaufplan): classes V/VI use the statutory doubled-tariff method without its low-income minimum-rate clauses; Kinderfreibeträge in the church tax/Soli calculation, private health insurance, company benefits and one-off payments are not yet modelled. The Soli threshold shown (€19,950) is the 2025 statutory value — 2026 figure pending verification. Your payroll department's numbers win.</p>
     <p>All calculation happens locally in your browser. Nothing you type is sent anywhere.</p>
     <div class="foot-meta">Rates: 2026 · BBG KV/PV €5,812.50/mo · BBG RV/AV €8,450/mo · Ø Zusatzbeitrag 2.9% · Grundfreibetrag €12,348 · Last checked: July 2026</div>
   </div>
@@ -375,12 +378,20 @@ function calc(){
   /* --- wage tax (annualised estimate) --- */
   const aGross = gross*12;
   const vorsorge = (rvEmp + kvEmp + pvEmp) * 12;      // Vorsorgepauschale approximation
-  let zvE = aGross - P.werbungskosten - P.sonderausgaben - vorsorge;
+  let zvE = aGross - vorsorge;
+  if (cls !== '6') zvE -= (P.werbungskosten + P.sonderausgaben); // class VI: no employee allowances (§39b Abs.2 EStG)
   if (cls === '2') zvE -= P.entlastungII;
   zvE = Math.max(0, zvE);
 
   const splitting = cls === '3';
-  const aLSt = splitting ? 2*tariff(zvE/2) : tariff(zvE);
+  let aLSt;
+  if (cls === '5' || cls === '6'){
+    // §39b Abs.2 S.7 EStG: doubled-difference method for classes V/VI.
+    // Minimum-rate clauses (14%/42%/45% floors) not modelled — small deviation at low incomes.
+    aLSt = Math.max(0, 2*(tariff(1.25*zvE) - tariff(0.75*zvE)));
+  } else {
+    aLSt = splitting ? 2*tariff(zvE/2) : tariff(zvE);
+  }
 
   const frei = splitting ? P.soliFrei*2 : P.soliFrei;
   const aSoli = aLSt > frei ? Math.min(P.soliRate*aLSt, P.soliMild*(aLSt-frei)) : 0;
@@ -553,6 +564,7 @@ function render(){
   document.getElementById('lgTax').textContent = pt.toFixed(1)+'%';
   document.getElementById('lgSv').textContent  = ps.toFixed(1)+'%';
 
+  syncURL(r);
   bindRows(ex);
   if (selected && ex[selected]) showExplain(ex[selected]); // keep panel in sync with new numbers
 }
@@ -610,6 +622,31 @@ document.getElementById('ctaForm').addEventListener('submit',e=>{
   document.getElementById('ctaOk').style.display='inline';
 });
 
+/* ---- shareable URLs (?g=5000&c=1&s=BE&k=0&ch=0&zb=2.9) ---- */
+function applyURL(){
+  const q = new URLSearchParams(location.search);
+  if (q.has('g'))  document.getElementById('gross').value = q.get('g');
+  if (q.has('c'))  document.getElementById('taxclass').value = q.get('c');
+  if (q.has('s'))  document.getElementById('state').value = q.get('s');
+  if (q.has('k'))  document.getElementById('kids').value = q.get('k');
+  if (q.has('zb')) document.getElementById('zb').value = q.get('zb');
+  if (q.get('ch') === '1'){
+    document.querySelectorAll('#churchSwitch button').forEach(x=>x.classList.remove('on'));
+    document.querySelector('#churchSwitch button[data-v="1"]').classList.add('on');
+  }
+}
+function syncURL(r){
+  const q = new URLSearchParams({g:r.gross,c:r.cls,s:r.state,k:r.kids,ch:r.church?1:0,zb:r.zb});
+  history.replaceState(null,'','?'+q.toString());
+}
+document.getElementById('shareBtn').addEventListener('click',e=>{
+  navigator.clipboard.writeText(location.href).then(()=>{
+    e.target.textContent = '✓ Link copied';
+    setTimeout(()=>{e.target.textContent='⧉ Copy link to this calculation';},1800);
+  });
+});
+
+applyURL();
 render();
 renderChips();
 </script>
