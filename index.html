@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Decode your payslip — Payslip Decoded</title>
-<meta name="description" content="Drop your German payslip PDF and get every line explained in plain English. Parsed entirely in your browser — the file never leaves your device.">
+<meta name="description" content="Drop your German, Austrian or Swiss payslip PDF and get every line explained in plain English. Parsed entirely in your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,58 +17,71 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--sans);background:var(--page);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px}
   header{border-bottom:1px solid var(--rule);background:var(--paper)}
   .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 0;gap:16px;flex-wrap:wrap}
   .logo{display:flex;align-items:baseline;gap:10px}
   .logo b{font-size:19px;font-weight:700}
   .logo span{font-family:var(--mono);font-size:11px;color:var(--ink-soft);border:1px solid var(--rule);border-radius:4px;padding:1px 7px}
   .back{font-size:13px;color:var(--blue);text-decoration:none}
-  .hero{padding:40px 0 8px;max-width:680px}
+  .hero{padding:38px 0 6px;max-width:640px}
   .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
-  h1{font-size:clamp(26px,4vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
+  h1{font-size:clamp(25px,4vw,36px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
   h1 .mk{background:linear-gradient(transparent 58%,var(--marker) 58%)}
-  .sub{margin-top:12px;color:var(--ink-soft);font-size:15.5px}
+  .sub{margin-top:12px;color:var(--ink-soft);font-size:15px}
   .privacy{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-family:var(--mono);font-size:12px;background:#EAF4EE;border:1px solid #BFDCCB;color:var(--green);border-radius:99px;padding:6px 14px}
 
-  .drop{margin:26px 0 10px;border:2px dashed var(--rule);border-radius:var(--radius);background:var(--paper);padding:44px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .drop{margin:24px 0 8px;border:2px dashed var(--rule);border-radius:var(--radius);background:var(--paper);padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
   .drop.over{border-color:var(--blue);background:var(--blue-soft)}
-  .drop h2{font-size:17px;font-weight:600}
-  .drop p{font-size:13px;color:var(--ink-soft);margin-top:6px}
-  .drop .btn{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:13px;background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px}
+  .drop h2{font-size:16px;font-weight:600}
+  .drop p{font-size:13px;color:var(--ink-soft);margin-top:5px}
+  .drop .btn{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:13px;background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px}
   #fileInput{display:none}
   .status{font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin:10px 0;min-height:20px}
   .status.err{color:var(--red)}
 
-  .pastebox{background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);padding:20px;margin:22px 0}
-  .pastebox label{font-size:13px;font-weight:600;display:block;margin-bottom:8px}
-  .pasterow{display:flex;gap:8px;flex-wrap:wrap}
-  .pastebox input{flex:1;min-width:240px;font-family:var(--mono);font-size:13.5px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px}
-  .pastebox button{font-family:var(--sans);font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;border:0;background:var(--blue);color:#fff;cursor:pointer}
-  input:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
-  .pastebox .hint{font-size:12px;color:var(--ink-soft);margin-top:8px}
-
-  .results{margin:8px 0 40px}
-  .slipmeta{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);margin:16px 0 10px}
-  .line-card{background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px}
-  .lc-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
-  .lc-name{font-family:var(--mono);font-size:14px;font-weight:600}
-  .lc-name .code{color:var(--ink-soft);font-weight:400;margin-right:8px}
-  .lc-amt{font-family:var(--mono);font-size:14.5px;font-weight:600}
-  .lc-amt.neg{color:var(--red)}
-  .badges{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+  /* ---------- decoded slip: accordion document ---------- */
+  .slipdoc{background:var(--paper);border:1px solid var(--rule);border-radius:4px;box-shadow:0 1px 2px rgba(22,24,29,.05),0 12px 28px -18px rgba(22,24,29,.25);margin:14px 0 30px;overflow:hidden}
+  .slip-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:2px solid var(--ink)}
+  .slip-head .t{font-family:var(--mono);font-size:14px;font-weight:600}
+  .slip-head .cc{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+  .totals{display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono);padding:14px 20px;background:#FBFAF6;border-bottom:1px solid var(--rule)}
+  .totals div b{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:400}
+  .totals div span{font-size:16px;font-weight:600}
+  .totals .netv{color:var(--green)}
+  .sec-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);padding:14px 20px 6px;border-bottom:1px solid var(--rule)}
+  details.line{border-bottom:1px solid var(--rule)}
+  details.line summary{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 20px;cursor:pointer;list-style:none;font-family:var(--mono)}
+  details.line summary::-webkit-details-marker{display:none}
+  details.line summary:hover{background:#FBFAF6}
+  details.line summary:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+  .l-nm{font-size:13px;font-weight:500}
+  .l-nm .code{color:var(--ink-soft);font-weight:400;margin-right:8px;font-size:11.5px}
+  .l-amt{font-size:13.5px;font-weight:600;text-align:right}
+  .l-amt.neg{color:var(--red)}
+  .l-caret{color:var(--ink-soft);font-size:11px;transition:transform .15s}
+  details.line[open] .l-caret{transform:rotate(90deg)}
+  details.line[open] summary{background:var(--blue-soft)}
+  details.line[open] summary .l-nm{position:relative}
+  details.line[open] summary .l-nm::after{content:"";position:absolute;inset:-2px -6px;background:var(--marker);opacity:.45;border-radius:3px;z-index:-1}
+  .l-body{padding:4px 20px 16px;font-family:var(--sans)}
+  .badges{display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap}
   .badge{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;padding:3px 9px;border-radius:99px;border:1px solid}
   .b-free{color:var(--green);border-color:#BFDCCB;background:#EAF4EE}
   .b-tax{color:var(--red);border-color:#E7C9C6;background:#F9EFEE}
   .b-info{color:var(--blue);border-color:#C9D4EC;background:var(--blue-soft)}
-  .lc-body{font-size:13.5px;margin-top:4px}
-  .lc-law{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:8px}
-  .lc-tip{border-left:3px solid var(--blue);padding-left:10px;font-size:13px;margin-top:8px}
-  .totals{background:var(--ink);color:#fff;border-radius:var(--radius);padding:18px 20px;margin:14px 0;display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono)}
-  .totals div b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#B9BDC6;font-weight:400}
-  .totals div span{font-size:17px;font-weight:600}
-  .totals .netv{color:var(--marker)}
-  .unparsed{font-size:12.5px;color:var(--ink-soft);margin-top:14px}
+  .l-text{font-size:13.5px}
+  .l-tip{border-left:3px solid var(--blue);padding-left:10px;font-size:13px;margin-top:8px}
+  .l-law{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:8px}
+  .slip-foot{font-size:12px;color:var(--ink-soft);padding:12px 20px}
+
+  .pastebox{background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);padding:20px;margin:22px 0}
+  .pastebox label{font-size:13px;font-weight:600;display:block;margin-bottom:8px}
+  .pasterow{display:flex;gap:8px;flex-wrap:wrap}
+  .pastebox input{flex:1;min-width:220px;font-family:var(--mono);font-size:13.5px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px}
+  .pastebox button{font-family:var(--sans);font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;border:0;background:var(--blue);color:#fff;cursor:pointer}
+  input:focus,button:focus-visible,.drop:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  .pastebox .hint{font-size:12px;color:var(--ink-soft);margin-top:8px}
   footer{border-top:1px solid var(--rule);padding:24px 0 40px;font-size:12.5px;color:var(--ink-soft)}
   footer p{max-width:780px;margin-bottom:8px}
 </style>
@@ -77,16 +90,16 @@
 
 <header>
   <div class="wrap hd">
-    <div class="logo"><b>Payslip&nbsp;Decoded</b><span>DE · PDF decoder beta</span></div>
+    <div class="logo"><b>Payslip&nbsp;Decoded</b><span>🇩🇪 🇦🇹 🇨🇭 · beta</span></div>
     <a class="back" href="index.html">← Net salary calculator</a>
   </div>
 </header>
 
 <main class="wrap">
   <section class="hero">
-    <div class="eyebrow">Beta — SAP pay advice format first</div>
-    <h1>Drop your payslip. <span class="mk">Get every line explained.</span></h1>
-    <p class="sub">Works with SAP-style German pay advices (German or English labels). Other formats: use the paste box below — it understands standard German payroll vocabulary.</p>
+    <div class="eyebrow">Germany · Austria · Switzerland</div>
+    <h1>Drop your payslip. <span class="mk">Tap any line to understand it.</span></h1>
+    <p class="sub">Your payslip, rebuilt on screen — with every wage type, supplement and deduction explained in plain English. The country and format are detected automatically.</p>
     <div class="privacy">🔒 100% in your browser — the file is never uploaded anywhere</div>
   </section>
 
@@ -97,166 +110,343 @@
     <input type="file" id="fileInput" accept="application/pdf">
   </div>
   <div class="status" id="status"></div>
-  <div class="results" id="results"></div>
+  <div id="results"></div>
 
   <div class="pastebox">
     <label for="pasteIn">No PDF at hand, or a different format? Paste any payslip line:</label>
     <div class="pasterow">
-      <input id="pasteIn" placeholder='e.g. "101 Zuschlag 25% Nightshift" or "Urlaubsabgeltung"'>
+      <input id="pasteIn" placeholder='e.g. "Urlaubszuschuss", "Quellensteuer" or "101 Zuschlag 25%"'>
       <button id="pasteBtn" type="button">Explain it</button>
     </div>
-    <div class="hint">Try: Sachbezug · Betr.AV · Abfindung · Firmenrabatt · Mutterschaftsgeldzuschuss · backdated</div>
+    <div class="hint">Try: Sachbezug · Urlaubszuschuss · Withholding tax · Nachtzulage · BVG · Abfindung</div>
     <div id="pasteOut"></div>
   </div>
 </main>
 
 <footer>
   <div class="wrap">
-    <p><b>Estimates and general explanations, not tax or legal advice.</b> Line classification uses the printed tax/SV flags where available and keyword matching otherwise; unusual company-specific wage types may be explained generically or not at all. Multi-slip PDFs: only the first payslip is decoded.</p>
+    <p><b>Estimates and general explanations, not tax or legal advice.</b> Line classification uses the printed flags and rates where available, plus keyword matching. Company-specific wage types may be explained generically. Multi-slip PDFs: only the first payslip is decoded. Swiss child allowances and withholding-tax tariffs vary by canton; Austrian collective-agreement supplements vary by Kollektivvertrag.</p>
     <p>Parsing runs entirely on your device via pdf.js. Nothing you drop here is transmitted, stored, or logged.</p>
   </div>
 </footer>
 
 <script>
-/* =========================================================
-   EXPLANATION ENGINE — keyword rules, evaluated top-down.
-   Generic German payroll vocabulary; not employer-specific.
-   ========================================================= */
-const RULES = [
- {re:/backdated|nachber|nachzahl|rückrechn/i, title:'Retro calculation (Nachberechnung)',
-  body:'A correction of a previous month — e.g. a late raise, corrected hours, or a backdated absence. The system recalculates the old period and books the difference into this payslip. For tax it counts in the month it is paid; for social insurance it is attributed back to the period it was earned.',
-  law:'§11 EStG (Zuflussprinzip); §22 SGB IV', tip:'A retro line plus a normal line with the same name is expected — one is this month, one is the correction.'},
- {re:/zuschlag|nightshift|night\s?work|sonntag|sunday|feiertag|holiday\s?(hrs|hours|%)|public holiday/i, title:'SFN supplement (night/Sunday/holiday premium)',
-  body:'Premiums for night, Sunday and public-holiday work are tax- and social-insurance-free within legal limits: up to 25% for night work (40% between 0–4h), 50% for Sundays, and 125–150% for public holidays — calculated on a base hourly wage of at most €50 (tax) / €25 (social insurance). That is why these lines carry tax-free flags.',
-  law:'§3b EStG; §1 SvEV', tip:'Tax-free only for hours actually worked at those times — flat monthly allowances do not qualify.'},
- {re:/sachbezug/i, title:'Benefit in kind (Sachbezug)',
-  body:'A non-cash benefit — typically vouchers or benefit cards. Up to €50 per month it is completely tax- and contribution-free (Sachbezugsfreigrenze). One cent over the limit and the entire amount becomes taxable, which is why the value is usually pinned just below €50.',
-  law:'§8 Abs. 2 S. 11 EStG', tip:'The amount appears in gross and is deducted again at the bottom — it inflates the payslip visually but was never cash.'},
- {re:/firmenrabatt|personalrabatt|rabatt/i, title:'Staff discount (Firmen-/Personalrabatt)',
-  body:'Discounts on your employer\'s own products or services. Tax-free up to €1,080 per year after a 4% valuation discount (Rabattfreibetrag). Shown on the payslip for documentation and deducted again as a non-cash item.',
-  law:'§8 Abs. 3 EStG', tip:'Only applies to goods/services your employer sells to customers — not to third-party perks.'},
- {re:/betr\.?\s?av|bav|altersvorsorge|entgeltumwandlung|direktvers/i, title:'Company pension (bAV)',
-  body:'Contributions to an occupational pension. Tax-free up to 8% of the pension ceiling (2026: €8,112/yr) and social-insurance-free up to 4% (€4,056/yr) — which is why you may see separate ST-frei, SV-pfl and ST-pfl variants of the same item once limits are exceeded. Employer contributions (AG) and your own converted salary (AN) are booked on separate lines.',
-  law:'§3 Nr. 63 EStG; §1a BetrAVG', tip:'Lines flagged "N" are not part of your total gross — they route money past the payslip into the pension contract.'},
- {re:/abfindung|severance/i, title:'Severance payment (Abfindung)',
-  body:'Compensation for losing your job. It is fully taxable but free of social insurance contributions. Since 2025 the payroll department no longer applies the "Fünftelregelung" tax smoothing — you claim it yourself in your tax return, where a large severance can save thousands.',
-  law:'§34 EStG; §14 SGB IV (SV-free)', tip:'File a tax return in the severance year and check the Fünftelregelung — it is no longer automatic.'},
- {re:/muttersch|maternity/i, title:'Maternity pay top-up (Zuschuss zum Mutterschaftsgeld)',
-  body:'During the protection period your health insurer pays €13/day and your employer tops it up to your previous net. The top-up is tax- and contribution-free, but it is subject to Progressionsvorbehalt: it raises the tax rate applied to your other income in the annual assessment.',
-  law:'§20 MuSchG; §3 Nr. 1d, §32b EStG', tip:'Expect this to affect your tax return result even though no tax was withheld on it.'},
- {re:/esop|mitarbeiterbeteiligung|aktienoption|share|equity|rsu/i, title:'Employee equity (ESOP/shares)',
-  body:'Equity benefits are taxed as a benefit in kind when you receive or exercise them, at your normal progressive rate. Up to €2,000 per year can be tax-free if granted by the employer under the participation allowance, and startups may defer taxation under §19a.',
-  law:'§3 Nr. 39, §19a EStG', tip:'A big equity line can push the month\'s withholding up sharply — the annualised one-off method smooths this in your tax return.'},
- {re:/urlaubsabgeltung/i, title:'Payout of unused holiday (Urlaubsabgeltung)',
-  body:'Remaining vacation days paid out in cash, usually when leaving. Fully taxable and contribution-liable, taxed as a one-off payment using the annualised method — so the deduction on this single slip looks disproportionately high.',
-  law:'§7 Abs. 4 BUrlG', tip:'Only allowed at termination — during employment, holiday must be taken, not sold.'},
- {re:/referral/i, title:'Referral bonus', body:'A reward for recommending a hire. Ordinary taxable pay, treated as a one-off payment — taxed and contribution-liable in full.', law:'§19 EStG', tip:'The net you keep is often only ~55–60% of the headline amount; that is normal, not an error.'},
- {re:/bonus|commission|provision|prämie|tantieme|performance/i, title:'Bonus / commission',
-  body:'Variable pay is fully taxable and contribution-liable. As a one-off payment (sonstiger Bezug) it is taxed with the annualised method: the system asks "what would the yearly tax be with and without this payment" and withholds the difference — the spike in this month\'s deductions is expected.',
-  law:'§39b Abs. 3 EStG', tip:'If the ceiling for pension/health contributions is reached this month, part of the bonus escapes social insurance — check the Contr.income lines.'},
- {re:/überstund|overtime|mehrarbeit/i, title:'Overtime',
-  body:'Paid overtime is ordinary taxable, contribution-liable pay. The premium portion (e.g. +25%) is NOT tax-free — only night/Sunday/holiday supplements enjoy that privilege.',
-  law:'§19 EStG', tip:'Overtime in a high-earning month can be taxed noticeably above your average rate — progression at work, refunded via the tax return if your year is uneven.'},
- {re:/unpaid|unbezahlt/i, title:'Unpaid leave',
-  body:'Hours or days without pay reduce your gross proportionally. Short unpaid leave keeps your insurance intact; if it exceeds one month, health insurance coverage through the employer ends and you must insure yourself.',
-  law:'§7 Abs. 3 SGB IV', tip:'Watch the one-month limit — it is a real coverage cliff, not a formality.'},
- {re:/kurzarbeit/i, title:'Short-time work (Kurzarbeitergeld)',
-  body:'The Agentur für Arbeit replaces 60% (67% with children) of the lost net. The benefit itself is tax-free but raises your tax rate on other income (Progressionsvorbehalt), and receiving it obliges you to file a tax return.',
-  law:'§95 ff. SGB III; §32b EStG', tip:'Many Kurzarbeit recipients face a small back-payment at assessment — plan for it.'},
- {re:/gehalt|grundgehalt|salary/i, title:'Base salary (Gehalt)',
-  body:'Your contractual monthly gross — the anchor every deduction is calculated from. Fully taxable and contribution-liable up to the respective ceilings.',
-  law:'§611a BGB', tip:'Compare against your contract after every raise — retro lines should appear if a raise was late.'},
- {re:/stundenlohn|hourly/i, title:'Hourly wage (Stundenlohn)',
-  body:'Base pay calculated as hours × rate. Check the quantity column against your own time records — hour-based pay is where most payslip errors hide.',
-  law:'§611a BGB; MiLoG (minimum wage 2026: €13.90)', tip:'2026 minimum wage is €13.90/h — the quantity × rate on this line must respect it.'},
- {re:/sick|krank|entgeltfortzahlung/i, title:'Sick pay (Entgeltfortzahlung)',
-  body:'Your employer continues 100% of pay for up to 6 weeks per illness. On hourly contracts it appears as a separate line valuing the sick hours. After 6 weeks the Krankenkasse takes over with ~70% of gross.',
-  law:'EFZG; §44 SGB V', tip:'Separate illnesses restart the 6-week clock; the same illness does not.'},
- {re:/holiday hourly|urlaubsentgelt|urlaubslohn/i, title:'Holiday pay (hourly)',
-  body:'Vacation hours paid at your average earnings of the last 13 weeks — including regular supplements, which people often don\'t realise.',
-  law:'§11 BUrlG', tip:'If you regularly work paid night shifts, your holiday hour should be worth more than your base hour.'},
- {re:/vermögensbildung|vwl|vermögenswirksam/i, title:'Capital-forming payments (VL)',
-  body:'A small employer top-up (up to €40/month) paid into a savings contract you choose. Legacy benefit, frequently unclaimed.',
-  law:'5. VermBG', tip:'If this line is missing and your contract or collective agreement offers VL — ask. It is free money.'},
- {re:/ag-zuschuss.*kv|zuschuss.*krankenversich/i, title:'Employer subsidy to health insurance',
-  body:'For voluntarily or privately insured employees, the employer pays a subsidy of half the contribution, capped at half the maximum statutory contribution (2026: max €508.59 for KV). Shown informationally; the full premium is on the companion "Gesamtbeitrag" line.',
-  law:'§257 SGB V', tip:'Check the subsidy is actually half your premium up to the cap — a stale premium on file is a common error.'},
- {re:/gesamtbeitrag/i, title:'Total insurance premium (informational)',
-  body:'The full monthly premium of your voluntary/private insurance that the employer forwards or you pay directly. Informational — the money movement is shown in the deduction block.',
-  law:'§257 SGB V', tip:null},
- {re:/abschlag|vorschuss|advance/i, title:'Advance payment (Abschlag/Vorschuss)',
-  body:'Money you already received earlier in the month, now settled against your net. It reduces the payout, not your gross — no tax effect.',
-  law:'—', tip:'Advance in one month, lower payout the next: always read both slips together.'},
- {re:/parental|eltern/i, title:'Parental leave bonus',
-  body:'An employer-paid bonus around parental leave. Unless a specific exemption applies, employer top-ups during parental leave are taxable pay (unlike state Elterngeld, which is tax-free with Progressionsvorbehalt).',
-  law:'§19 EStG; BEEG (Elterngeld)', tip:'Employer top-ups can reduce your Elterngeld if paid during the reference or benefit period — time them carefully.'},
-];
-function explain(desc){
-  for (const r of RULES) if (r.re.test(desc)) return r;
-  return {title:'Company-specific wage type', body:'This label doesn\'t match standard German payroll vocabulary — it is likely a company-specific item. The tax/SV flag badges above still tell you how it is treated.', law:'—', tip:'Ask payroll for this Lohnart\'s definition; every code has one.'};
+/*PARSERS-BEGIN*/
+/* ================= shared ================= */
+const AMT_DE=/^-?\d{1,3}(?:\.\d{3})*,\d{2}$/;
+const AMT_CH=/^-?\d{1,3}(?:'\d{3})*\.\d{2}$/;
+
+function detectFormat(lines){
+  const t=lines.join('\n');
+  if(/OASI number|AHV-Nummer|Payroll settlement|Lohnabrechnung per|'\d{3}\.\d{2}\s+CHF/.test(t)) return 'CH';
+  if(/ASB SI|Urlaubszuschuss|Lohn \/ Gehaltsabrechnung|LSt-Tg/.test(t)) return 'AT';
+  return 'DE';
 }
 
-/* ---------- flag badges (full LOGN17 legend) ---------- */
+/* ================= DE (LOGN17 / Pay Advice) ================= */
+const FLAGCHARS='LSFEPAMNVW';
+const UNITS=new Set(['Std','Tage','Tg','Km','St','T','EUR','Tsd','Mio']);
+function parseDE(lines){
+  const pay=[],info=[],totals={},seen=new Set();
+  const MID99=/(99\d{2})\s+([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß./ -]{2,39}?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})(-?)(?:\s|$)/;
+  for(const raw of lines){
+    const ln=raw.trim(), tokens=ln.split(/\s+/);
+    if(tokens.length>=3&&/^\d{3,4}$/.test(tokens[0])&&!tokens[0].startsWith('99')){
+      const last=tokens[tokens.length-1].match(/^(\d{1,3}(?:\.\d{3})*,\d{2})(-?)$/);
+      if(last){
+        let mid=tokens.slice(1,-1),singles=[];
+        while(mid.length){
+          const t=mid[mid.length-1];
+          if(t.length===1&&(FLAGCHARS.includes(t)||t==='J'||t==='N')){singles.unshift(t);mid.pop();continue;}
+          if((/^[\d.,-]+$/.test(t)&&!t.includes('%'))||UNITS.has(t)){mid.pop();continue;}
+          break;
+        }
+        const desc=mid.join(' ');
+        if((desc.match(/[A-Za-zÄÖÜäöüß]/g)||[]).length>=2){
+          let tx='',so='',tg='';
+          if(singles.length>=3){[tx,so,tg]=singles.slice(-3);}
+          else if(singles.length===1){tg=singles[0];}
+          if(tg&&tg!=='J'&&tg!=='N'){tx=so;so=tg;tg='';}
+          pay.push({code:tokens[0],desc,amt:last[1]+last[2],neg:last[2]==='-',tx,so,tg});
+          continue;
+        }
+      }
+    }
+    const m=ln.match(MID99);
+    if(m){const key=m[1]+m[2]+m[3];if(!seen.has(key)){seen.add(key);info.push({code:m[1],desc:m[2].trim(),amt:m[3]+m[4],neg:m[4]==='-'});}}
+    if(!totals.gross){const g=ln.match(/(?:Total gross income|Gesamt-?Brutto).*?(\d{1,3}(?:\.\d{3})*,\d{2})\s*$/);if(g)totals.gross=g[1];}
+    if(!totals.net&&/[A-Z]{2}\d{2}\s?\d{4}/.test(ln)){const a=ln.match(/(\d{1,3}(?:\.\d{3})*,\d{2})-?\s*$/);if(a)totals.net=a[1];}
+  }
+  if(!totals.gross&&pay.length){
+    const toN=s=>parseFloat(s.replace(/\./g,'').replace(',','.'));
+    totals.gross=pay.filter(l=>l.tg==='J').reduce((a,l)=>a+toN(l.amt),0).toLocaleString('de-DE',{minimumFractionDigits:2});
+  }
+  return {pay,info,totals,fmt:'DE'};
+}
+
+/* ================= CH (Swiss payroll settlement) ================= */
+const CH_TOTALS={'5000':'gross','8000':'net','9000':'paid'};
+function parseCH(lines){
+  const pay=[],info=[],totals={};let prevCode=null;
+  for(const raw of lines){
+    const ln=raw.trim();
+    if(/^\d+,\s/.test(ln)) continue;                       // child-name detail rows
+    const tokens=ln.split(/\s+/);
+    if(!/^\d{3,4}$/.test(tokens[0])) continue;
+    const code=tokens[0];
+    if(code==='9240'){
+      const days=tokens.filter(t=>/^-?\d+\.\d{2}$/.test(t));
+      info.push({code,desc:'Vacation balance in days (YTD)',amt:(days[days.length-1]||'—')+' days',neg:false});
+      prevCode=code;continue;
+    }
+    let amt=null;
+    for(let i=tokens.length-1;i>0;i--){
+      if(tokens[i]==='CHF'&&AMT_CH.test(tokens[i-1])){amt=tokens[i-1];break;}
+    }
+    if(!amt){prevCode=code;continue;}
+    if(code===prevCode) continue;                          // grey detail row repeating the code
+    let mid=tokens.slice(1);
+    while(mid.length){
+      const t=mid[mid.length-1];
+      if(t==='CHF'||t==='%'||/^(hrs|Day|day|Tge|Std)$/.test(t)||AMT_CH.test(t)||/^-?\d+\.\d{2,3}$/.test(t)){mid.pop();continue;}
+      break;
+    }
+    const desc=mid.join(' ');
+    if((desc.match(/[A-Za-zÄÖÜäöüß]/g)||[]).length<2){prevCode=code;continue;}
+    if(CH_TOTALS[code]){totals[CH_TOTALS[code]]=amt;prevCode=code;continue;}
+    pay.push({code,desc,amt,neg:amt.startsWith('-')});
+    prevCode=code;
+  }
+  return {pay,info,totals,fmt:'CH'};
+}
+
+/* ================= AT (Lohn/Gehaltsabrechnung) ================= */
+const AT_DED_LABELS=['Cur SI contribution Previous','Cur SI contribution','SI contribution SP','Cur ITa contribution Previou','Cur ITa contribution','ITa contribution SP','Total statutory deductions','BV contribution Previous mo','BV contribution'];
+function parseAT(lines){
+  const pay=[],info=[],totals={};let retro=false;
+  for(const raw of lines){
+    const ln=raw.trim();
+    if(/^Arrears for/i.test(ln)){retro=true;continue;}
+    const gm=ln.match(/^Gross\s+(-?[\d.]+,\d{2})$/);
+    if(gm){totals.gross=gm[1];retro=false;continue;}
+    const nm=ln.match(/^Net\s+(-?[\d.]+,\d{2})/);
+    if(nm){totals.net=nm[1];continue;}
+    const pm=ln.match(/^Payment\s+(-?[\d.]+,\d{2})/);
+    if(pm){totals.paid=pm[1];continue;}
+    const tokens=ln.split(/\s+/);
+    if(/^\d{4}$/.test(tokens[0])){
+      const nums=[];let i=tokens.length-1;
+      while(i>0&&AMT_DE.test(tokens[i])){nums.unshift(tokens[i]);i--;}
+      if(!nums.length) continue;
+      const desc=tokens.slice(1,i+1).join(' ');
+      if((desc.match(/[A-Za-zÄÖÜäöüß§]/g)||[]).length<2) continue;
+      const amt=nums.length>=3?nums[nums.length-3]:nums[nums.length-1];
+      pay.push({code:tokens[0],desc:(retro?'[Arrears] ':'')+desc,amt,neg:amt.startsWith('-')});
+      continue;
+    }
+    for(const lab of AT_DED_LABELS){
+      if(ln.startsWith(lab)){
+        const a=ln.slice(lab.length).trim().split(/\s+/)[0];
+        if(AMT_DE.test(a)) info.push({code:'',desc:lab,amt:a,neg:a.startsWith('-')});
+        break;
+      }
+    }
+  }
+  return {pay,info,totals,fmt:'AT'};
+}
+/*PARSERS-END*/
+
+/* ================= EXPLANATION ENGINE ================= */
+const R_AT=[
+ {re:/^\[Arrears\]/i,title:'Correction for a previous month (Aufrollung)',
+  body:'This line re-calculates an earlier month — corrected hours, late sick leave, or backdated changes. Tax and social insurance for it are shown as separate "Previous" positions in the deduction block.',
+  law:'§77 (4a) EStG (Aufrollung)',tip:'Seeing the same wage type twice — once normal, once under Arrears — is expected, not a duplicate.'},
+ {re:/urlaubszuschuss|weihnachtsremuneration|sonderzahlung/i,title:'13th/14th salary (Urlaubszuschuss / special payment)',
+  body:'Austria\'s famous extra salaries: the holiday bonus (usually June) and Christmas bonus (usually November), granted by your Kollektivvertrag. They are taxed at a privileged flat 6% (first €620 per year tax-free) instead of your normal progressive rate, as long as they fit within your "annual sixth" (Jahressechstel). Social insurance applies at a slightly lower special-payment rate.',
+  law:'§67 (1)(2) EStG; §54 ASVG',tip:'That is why your June payslip shows roughly double gross but far less than double deductions — the 6% rate is the best deal in Austrian payroll.'},
+ {re:/monatslohn|gross salary|gehalt/i,title:'Monthly base salary',
+  body:'Your contractual gross for the month — the base for social insurance (~18.07% employee side for regular pay) and progressive income tax. Minimums come from your Kollektivvertrag pay grade (see "Tarifgruppe" in the header).',
+  law:'§49 ASVG; Kollektivvertrag',tip:'Check the Tarifgruppe and BJ (career year) in the header — KV pay rises with seniority steps, and misclassification is a common payroll error.'},
+ {re:/nachtzulage|freibetrag\s*§?68/i,title:'Night allowance & its §68 tax exemption',
+  body:'These two lines work as a pair: the night allowance (Nachtzulage) is added to your pay, and the "Freibetrag §68 (1)" line subtracts the same amount from your tax base only — up to €360 per month for qualifying night/Sunday/holiday supplements and dirt/hardship/danger bonuses. You receive the money; the negative line just makes it tax-free.',
+  law:'§68 (1) EStG',tip:'A negative line on your payslip here is good news — it is removing tax, not pay.'},
+ {re:/zuschlag\s*100|überstunden.*100|feiertag\s*100/i,title:'100% supplement (overtime/holiday premium)',
+  body:'Work on public holidays or qualifying overtime paid with a 100% premium per your Kollektivvertrag. "pfl." on the line means taxable/insurable (pflichtig) — only the first €200/month of the premium portion of qualifying overtime supplements can be tax-free under §68 (2).',
+  law:'§68 (2) EStG; Kollektivvertrag',tip:'The base hour and the premium are often split across lines — compare the Quantity column against your own records.'},
+ {re:/zuschlag\s*25/i,title:'25% supplement',
+  body:'A 25% premium on qualifying hours (typically evening or overtime per your KV). Marked "pfl." = fully taxable and insurable unless it fits a §68 exemption bucket.',
+  law:'Kollektivvertrag; §68 EStG',tip:null},
+ {re:/krank.*schnitt/i,title:'Sick pay at average earnings',
+  body:'Sick leave is paid at your average earnings including regular supplements (Ausfallsprinzip / Schnitt). The "§68 (1)" variant carries the tax-free share of supplements that continue during sick leave; the "SV pfl." variant is the insurable part.',
+  law:'§3 EFZG',tip:'Full pay for 6–12 weeks per work year depending on tenure, then half pay — the entitlement grows with service years.'},
+ {re:/urlaub schnitt|pflegeurlaub/i,title:'Vacation / care leave at average pay',
+  body:'Vacation days and care leave (Pflegeurlaub — up to one week per year to care for a sick close relative, extendable for children) are paid at average earnings including regular supplements.',
+  law:'UrlG; §16 UrlG (Pflegefreistellung)',tip:'Care leave is a separate legal entitlement — it does not reduce your vacation days.'},
+ {re:/feiertag/i,title:'Public holiday pay',
+  body:'Pay for public holidays at the average you would have earned (Ausfallsprinzip). If you actually work the holiday, additional holiday supplements apply on top.',
+  law:'§9 ARG',tip:null},
+ {re:/performance bonus|referral|prämie|bonus/i,title:'Bonus',
+  body:'Bonuses are special payments: if they fit within your remaining annual sixth (Jahressechstel — one sixth of your average annual regular pay), they enjoy the privileged 6% rate; anything above spills into normal progressive taxation.',
+  law:'§67 (1)(2) EStG',tip:'Because Urlaubszuschuss and Weihnachtsremuneration usually consume most of the Jahressechstel, a June bonus is often taxed at 6% while a December one is not.'},
+ {re:/pfändung/i,title:'Wage garnishment (Pfändung)',
+  body:'A court-ordered deduction paid to a creditor, plus a small processing fee (Spesen). The law protects a subsistence minimum (Existenzminimum) that must stay with you; the employer calculates it from official tables.',
+  law:'§291a EO',tip:'The protected minimum rises with dependants — tell payroll about maintenance obligations, it directly increases what you keep.'},
+ {re:/bv contribution|betriebliche vorsorge|mitarbeitervorsorge/i,title:'Severance fund (BV / Abfertigung Neu)',
+  body:'Your employer pays 1.53% of gross into your Mitarbeitervorsorgekasse — the "new severance" system. It is shown for information only: nothing is deducted from you, and the pot follows you between employers.',
+  law:'BMSVG',tip:'After 3 years of contributions you can claim the balance when leaving (or keep it invested) — many employees never realise this money exists.'},
+ {re:/si contribution/i,title:'Social insurance contribution',
+  body:'Your employee share of health, pension, unemployment and accident-adjacent insurance — around 18.07% for regular pay and 17.07% for special payments (SP lines). "Previous" lines belong to the Arrears correction.',
+  law:'§51 ASVG',tip:'SI is capped at the Höchstbeitragsgrundlage — high earners stop paying above the monthly ceiling.'},
+ {re:/ita contribution/i,title:'Income tax withheld (Lohnsteuer)',
+  body:'Progressive income tax withheld monthly. The "SP" line is the privileged flat 6% on special payments (13th/14th, bonuses within the Jahressechstel); "Previous" lines belong to Arrears corrections.',
+  law:'§66, §67 EStG',tip:'Austria\'s tax brackets are inflation-adjusted yearly (abolition of cold progression) — a January net change without a raise is usually this.'},
+];
+const R_CH=[
+ {re:/monthly wage|monatslohn/i,title:'Monthly base salary',
+  body:'Your contractual gross for the month. Swiss deductions are lean by European standards — but note there is no health insurance on the payslip: you pay your Krankenkasse premium privately.',
+  law:'Art. 322 OR',tip:'When comparing Swiss net to German/Austrian net, subtract your private health premium (typically CHF 300–500/month) from the Swiss figure for a fair comparison.'},
+ {re:/hourly wage|stundenlohn/i,title:'Hourly wage',
+  body:'Base pay as hours × rate. For hourly staff, vacation and public-holiday entitlements are paid as percentage supplements on top (see the entitlement lines).',
+  law:'Art. 319 ff. OR',tip:'Check the hours against your own records — the grey sub-line repeats the calculation for transparency.'},
+ {re:/vacation pay entitlement|ferienentschädigung/i,title:'Vacation pay supplement',
+  body:'Hourly workers receive vacation as a supplement: 8.33% equals the legal 4 weeks (10.64% = 5 weeks, standard under age 20 and in many GAVs). Paying it out monthly is only permitted for irregular workloads — and it means unpaid time off when you actually take vacation.',
+  law:'Art. 329a/329d OR',tip:'If you take a week off and see a small payslip that month, this supplement is why — the vacation money was already paid out.'},
+ {re:/public holiday pay|feiertagsentschädigung/i,title:'Public holiday supplement',
+  body:'Compensation for public holidays falling on workdays, paid as a small percentage for hourly staff. The rate depends on canton and collective agreement.',
+  law:'Art. 110 (3) BV; GAV',tip:null},
+ {re:/overtime/i,title:'Overtime',
+  body:'"100%" means paid at the normal rate — the statutory 25% overtime premium (Art. 321c OR) can be replaced by contract with time off or plain-rate pay. Fully insurable and taxable.',
+  law:'Art. 321c OR',tip:'Check your contract: if it is silent, the legal default is base + 25%.'},
+ {re:/vacation payout/i,title:'Payout of unused vacation',
+  body:'Remaining vacation days paid in cash — normally only allowed at the end of employment. Fully subject to social contributions and withholding tax, which can push you into a higher Quellensteuer bracket for that month.',
+  law:'Art. 329d OR',tip:'A big payout month with a jump in the withholding-tax percentage is the tariff\'s monthly progression at work — the annual recalculation can partially refund it.'},
+ {re:/oasi|ahv/i,title:'OASI / AHV — state pension (1st pillar)',
+  body:'Old-age, survivors\' and disability insurance: 5.3% employee share (half of the 10.6% AHV/IV/EO total), uncapped — every franc of salary contributes. It funds the pay-as-you-go state pension.',
+  law:'AHVG',tip:'Leaving Switzerland for a non-EU country without a social-security agreement? A refund of AHV contributions may be possible; within the EU your entitlement is coordinated instead.'},
+ {re:/ui contribution|alv/i,title:'UI / ALV — unemployment insurance',
+  body:'1.1% employee share (half of 2.2%) up to the insured-earnings ceiling — income above it is contribution-free. Funds unemployment benefit of 70–80% of insured salary.',
+  law:'AVIG',tip:'Cross-border and foreign workers are covered too — register with the RAV immediately if your job ends.'},
+ {re:/dsa|ktg|daily sickness/i,title:'DSA / KTG — daily sickness allowance insurance',
+  body:'A collective insurance replacing salary during long illness (typically 80% for up to 730 days). The premium split between employer and employee is set by your company\'s policy — the rate on your slip is company-specific, not statutory.',
+  law:'Art. 324a OR; VVG',tip:'This is separate from your private health insurance — it covers your salary, not your medical bills.'},
+ {re:/pf\/lob|bvg/i,title:'PF / LOB / BVG — occupational pension (2nd pillar)',
+  body:'Your pension-fund contribution — a fixed franc amount, not a percentage, because BVG credits depend on age band (7/10/15/18% of insured salary), your fund\'s plan, and the coordination deduction. Employer pays at least as much again.',
+  law:'BVG/LOB',tip:'Your pension-fund certificate (sent yearly) shows the buy-in potential — voluntary buy-ins are one of the few big tax deductions available in Switzerland.'},
+ {re:/withholding tax|quellensteuer/i,title:'Withholding tax (Quellensteuer)',
+  body:'Income tax deducted at source for foreign employees without a C permit. The percentage comes from cantonal tariff tables and depends on income level, marital status, children and church membership — which is why colleagues with identical salaries can have different rates.',
+  law:'Art. 83 ff. DBG',tip:'Earning over CHF 120,000/yr triggers mandatory ordinary assessment; below that you can often request one voluntarily (NOV) to claim deductions like pillar 3a — sometimes worth thousands.'},
+ {re:/child and education|kinderzulage/i,title:'Child & education allowances',
+  body:'State family allowances (min. CHF 215/month child, CHF 268 education allowance since 2025 — several cantons pay more) paid out via your employer but funded by the family compensation fund. Not part of insurable salary: note your OASI base excludes it.',
+  law:'FamZG',tip:'Only one parent can draw the allowance per child — the entitlement order between parents is fixed by law, worth checking after family changes.'},
+ {re:/correction comp|daily sickness allowance/i,title:'Insurance benefit & correction pair',
+  body:'When the daily-sickness insurer pays benefits, the slip adds the benefit and books a correction — benefits are not subject to social contributions, so the pair shifts your contribution base rather than your payout.',
+  law:'Art. 324a/b OR',tip:'Check that the OASI base (Number column) is lower than gross in such months — that is the correction working correctly.'},
+ {re:/wage paid|net salary/i,title:'Net salary / wage paid',
+  body:'What lands in your account. Remember: unlike Germany or Austria, Swiss health insurance is not deducted here — budget your Krankenkasse premium separately.',
+  law:'—',tip:null},
+ {re:/vacation balance/i,title:'Vacation balance (info)',
+  body:'Informational running balance of vacation days — accrued vs. taken. A negative number means vacation taken in advance.',
+  law:'Art. 329a OR',tip:'Check this before resigning: negative balances can be deducted from your final pay in some cases; positive ones must be paid out or taken.'},
+ {re:/bonus/i,title:'Bonus',
+  body:'Fully insurable and taxable in the month paid — Switzerland has no privileged bonus tax rate. For Quellensteuer payers it raises that month\'s tariff percentage.',
+  law:'Art. 322d OR',tip:'Whether a "bonus" is legally owed (Lohnbestandteil) or voluntary (Gratifikation) depends on wording and history — relevant if it ever stops.'},
+];
+const R_DE=[
+ {re:/backdated|nachber|nachzahl|rückrechn/i,title:'Retro calculation (Nachberechnung)',body:'A correction of a previous month — e.g. a late raise, corrected hours, or a backdated absence. For tax it counts in the month paid; for social insurance it is attributed to the period earned.',law:'§11 EStG; §22 SGB IV',tip:'A retro line plus a normal line with the same name is expected — one is this month, one is the correction.'},
+ {re:/zuschlag|nightshift|sonntag|sunday|feiertag|holiday\s?(hrs|hours|%)|public holiday/i,title:'SFN supplement (night/Sunday/holiday premium)',body:'Night, Sunday and public-holiday premiums are tax- and contribution-free within legal limits: up to 25% night (40% 0–4h), 50% Sunday, 125–150% holidays — on a base wage capped at €50/h (tax) and €25/h (social insurance).',law:'§3b EStG; §1 SvEV',tip:'Tax-free only for hours actually worked at those times — flat monthly allowances do not qualify.'},
+ {re:/sachbezug/i,title:'Benefit in kind (Sachbezug)',body:'A non-cash benefit, typically vouchers. Up to €50/month completely tax- and contribution-free; one cent over and the whole amount becomes taxable.',law:'§8 Abs. 2 S. 11 EStG',tip:'It appears in gross and is deducted again at the bottom — it inflates the slip visually but was never cash.'},
+ {re:/firmenrabatt|personalrabatt/i,title:'Staff discount',body:'Discounts on your employer\'s own products, tax-free up to €1,080/year after a 4% valuation discount.',law:'§8 Abs. 3 EStG',tip:null},
+ {re:/betr\.?\s?av|bav|entgeltumwandlung/i,title:'Company pension (bAV)',body:'Occupational pension contributions: tax-free up to 8% of the pension ceiling (2026: €8,112/yr), contribution-free up to 4% — hence separate ST-frei/SV-pfl variants once limits are crossed. "N" flag = routed past total gross into the pension contract.',law:'§3 Nr. 63 EStG; §1a BetrAVG',tip:null},
+ {re:/abfindung|severance/i,title:'Severance (Abfindung)',body:'Taxable but free of social contributions. Since 2025 the Fünftelregelung tax smoothing is claimed via your tax return, not through payroll.',law:'§34 EStG; §14 SGB IV',tip:'File a return in the severance year — the Fünftelregelung can save thousands and is no longer automatic.'},
+ {re:/muttersch|maternity/i,title:'Maternity pay top-up',body:'Employer top-up to your previous net during the protection period. Tax-free, but subject to Progressionsvorbehalt in your annual assessment.',law:'§20 MuSchG; §3 Nr. 1d, §32b EStG',tip:null},
+ {re:/esop|aktienoption|rsu|mitarbeiterbeteiligung/i,title:'Employee equity',body:'Taxed as a benefit in kind at receipt/exercise. Up to €2,000/yr can be tax-free under the participation allowance; startups may defer via §19a.',law:'§3 Nr. 39, §19a EStG',tip:null},
+ {re:/urlaubsabgeltung/i,title:'Payout of unused holiday',body:'Cash payout of remaining vacation, normally only at termination. Fully taxable and insurable as a one-off payment.',law:'§7 Abs. 4 BUrlG',tip:null},
+ {re:/bonus|commission|provision|prämie|performance|referral/i,title:'Bonus / commission',body:'Fully taxable and insurable, taxed as a one-off using the annualised method — the deduction spike in this single month is expected and smooths out in the tax return.',law:'§39b Abs. 3 EStG',tip:null},
+ {re:/überstund|overtime|mehrarbeit/i,title:'Overtime',body:'Ordinary taxable, insurable pay — overtime premiums are NOT tax-free in Germany; only night/Sunday/holiday supplements are.',law:'§19 EStG',tip:null},
+ {re:/unpaid|unbezahlt/i,title:'Unpaid leave',body:'Reduces gross proportionally. Beyond one month, employer-based health coverage ends and you must insure yourself.',law:'§7 Abs. 3 SGB IV',tip:null},
+ {re:/kurzarbeit/i,title:'Short-time work',body:'The Agentur für Arbeit replaces 60/67% of lost net; tax-free with Progressionsvorbehalt, and it triggers a mandatory tax return.',law:'§95 ff. SGB III; §32b EStG',tip:null},
+ {re:/gehalt|grundgehalt|salary/i,title:'Base salary',body:'Your contractual gross — the anchor for every deduction, taxable and insurable up to the respective ceilings.',law:'§611a BGB',tip:null},
+ {re:/stundenlohn|hourly/i,title:'Hourly wage',body:'Hours × rate. 2026 minimum wage: €13.90/h. Check the quantity column against your records.',law:'MiLoG',tip:null},
+ {re:/krank|sick|entgeltfortzahlung/i,title:'Sick pay',body:'100% employer-paid for up to 6 weeks per illness, then Krankenkasse pays ~70% of gross.',law:'EFZG; §44 SGB V',tip:null},
+ {re:/holiday hourly|urlaubsentgelt/i,title:'Holiday pay (hourly)',body:'Vacation hours at your 13-week average including regular supplements.',law:'§11 BUrlG',tip:null},
+ {re:/vermögensbildung|vwl/i,title:'Capital-forming payments (VL)',body:'Employer top-up (up to €40/month) into a savings contract of your choice — free money, frequently unclaimed.',law:'5. VermBG',tip:null},
+ {re:/ag-zuschuss.*kv|zuschuss.*krankenversich/i,title:'Employer health-insurance subsidy',body:'For voluntarily/privately insured employees: half the premium, capped at half the maximum statutory contribution (2026: €508.59 KV).',law:'§257 SGB V',tip:null},
+ {re:/gesamtbeitrag/i,title:'Total insurance premium (info)',body:'The full premium of your voluntary/private insurance, shown informationally.',law:'§257 SGB V',tip:null},
+ {re:/abschlag|vorschuss|advance/i,title:'Advance payment',body:'Money already received earlier, settled against your net payout. No tax effect.',law:'—',tip:null},
+ {re:/parental|eltern/i,title:'Parental leave bonus',body:'Employer top-ups around parental leave are generally taxable pay (unlike state Elterngeld). Timing can affect Elterngeld — check before the reference period.',law:'§19 EStG; BEEG',tip:null},
+];
+const FALLBACK={title:'Company-specific wage type',body:'This label doesn\'t match standard payroll vocabulary — likely a company-specific item. The amount and any flags still tell you how it is treated.',law:'—',tip:'Ask payroll for this wage type\'s definition; every code has one.'};
+function explain(desc,fmt){
+  const sets=fmt==='AT'?[R_AT,R_DE]:fmt==='CH'?[R_CH,R_DE]:[R_DE,R_AT,R_CH];
+  for(const set of sets) for(const r of set) if(r.re.test(desc)) return r;
+  return FALLBACK;
+}
+
+/* ---------- badges (DE flags only; AT/CH classify via sign/keywords) ---------- */
 const TXMAP={F:['b-free','TAX-FREE'],L:['b-tax','TAXABLE'],S:['b-tax','ONE-OFF (annualised tax)'],E:['b-tax','ONE-OFF (annualised tax)'],P:['b-info','FLAT-RATE TAXED'],A:['b-info','SEVERANCE RULES'],M:['b-info','MULTI-YEAR PAY'],N:['b-info','RETRO'],V:['b-info','PRIOR YEAR'],W:['b-info','TIME-CREDIT']};
 const SOMAP={F:['b-free','SV-FREE'],L:['b-tax','SV-LIABLE'],S:['b-tax','SV ONE-OFF'],E:['b-tax','SV ONE-OFF'],N:['b-info','SV RETRO'],V:['b-info','SV PRIOR YEAR']};
-function badges(tx,so,tg){
+function badgesFor(l,fmt){
   const b=[];
-  if(TXMAP[tx]) b.push(TXMAP[tx]);
-  if(SOMAP[so]) b.push(SOMAP[so]);
-  if(tg==='J') b.push(['b-info','IN GROSS']); else if(tg==='N') b.push(['b-info','NOT IN GROSS']);
+  if(fmt==='DE'){
+    if(TXMAP[l.tx])b.push(TXMAP[l.tx]);
+    if(SOMAP[l.so])b.push(SOMAP[l.so]);
+    if(l.tg==='J')b.push(['b-info','IN GROSS']);else if(l.tg==='N')b.push(['b-info','NOT IN GROSS']);
+  }else{
+    b.push(l.neg?['b-tax','DEDUCTION / OFFSET']:['b-free','PAYMENT']);
+    if(fmt==='AT'&&/frei|§68/i.test(l.desc))b.push(['b-free','TAX-FREE PORTION']);
+    if(fmt==='AT'&&/pfl\./i.test(l.desc))b.push(['b-tax','TAXABLE/INSURABLE']);
+  }
   return b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
 }
-const fmtA = s => s; // amounts kept as printed (German format)
+const CUR={DE:'€',AT:'€',CH:'CHF'};
+const CNAME={DE:'🇩🇪 Germany',AT:'🇦🇹 Austria',CH:'🇨🇭 Switzerland'};
 
-/* =========================================================
-   PDF PARSING (pdf.js, fully client-side)
-   ========================================================= */
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-const drop=document.getElementById('drop'), fi=document.getElementById('fileInput'),
-      status=document.getElementById('status'), results=document.getElementById('results');
+/* ================= PDF handling ================= */
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const drop=document.getElementById('drop'),fi=document.getElementById('fileInput'),
+      status=document.getElementById('status'),results=document.getElementById('results');
 
 drop.addEventListener('click',()=>fi.click());
 drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click();}});
 ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
-drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f) handleFile(f);});
-fi.addEventListener('change',()=>{if(fi.files[0]) handleFile(fi.files[0]);});
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+fi.addEventListener('change',()=>{if(fi.files[0])handleFile(fi.files[0]);});
 
 async function handleFile(file){
-  results.innerHTML=''; status.classList.remove('err');
+  results.innerHTML='';status.classList.remove('err');
   if(file.type!=='application/pdf'){status.textContent='That is not a PDF.';status.classList.add('err');return;}
   status.textContent='Reading '+file.name+' locally…';
   try{
     const buf=await file.arrayBuffer();
     const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-    // Decode the FIRST payslip only (multi-slip files can be huge)
     const maxPages=Math.min(pdf.numPages,2);
     let lines=[];
     for(let p=1;p<=maxPages;p++){
       const page=await pdf.getPage(p);
       const tc=await page.getTextContent();
       lines=lines.concat(reconstructLines(tc.items));
-      if(p===1 && parseAllLines(lines).pay.length) break; // first page had wage lines
+      if(p===1){const f=detectFormat(lines);const r=(f==='CH'?parseCH:f==='AT'?parseAT:parseDE)(lines);if(r.pay.length)break;}
     }
-    renderSlip(lines, pdf.numPages);
+    const fmt=detectFormat(lines);
+    const r=(fmt==='CH'?parseCH:fmt==='AT'?parseAT:parseDE)(lines);
+    renderSlip(r,lines,pdf.numPages);
   }catch(err){
-    status.textContent='Could not read this PDF ('+err.message+'). If it is a scan/photo, only native PDFs are supported for now.';
+    status.textContent='Could not read this PDF ('+err.message+'). Scanned/photographed payslips are not supported yet.';
     status.classList.add('err');
   }
 }
 
-/* group text items into visual lines by y-coordinate, order by x */
 function reconstructLines(items){
   const rows={};
   for(const it of items){
-    if(!it.str.trim()) continue;
-    const y=Math.round(it.transform[5]/2)*2; // 2pt tolerance
+    if(!it.str.trim())continue;
+    const y=Math.round(it.transform[5]/2)*2;
     (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
   }
   return Object.keys(rows).sort((a,b)=>b-a).map(y=>{
     const parts=rows[y].sort((a,b)=>a.x-b.x);
-    let line='', lastEnd=0;
+    let line='',lastEnd=0;
     for(const p of parts){
       const gap=Math.max(1,Math.round((p.x-lastEnd)/4));
       line+=' '.repeat(line?gap:0)+p.s;
@@ -266,88 +456,40 @@ function reconstructLines(items){
   });
 }
 
-/* wage lines: token-based, no section gating — validated on both DE/EN templates */
-const FLAGCHARS='LSFEPAMNVW';
-const UNITS=new Set(['Std','Tage','Tg','Km','St','T','EUR','Tsd','Mio']);
-const AMT_END=/^(\d{1,3}(?:\.\d{3})*,\d{2})(-?)$/;
-const AMT=/(\d{1,3}(?:\.\d{3})*,\d{2})-?\s*$/;
-function parseWageLine(ln){
-  const tokens=ln.trim().split(/\s+/);
-  if(tokens.length<3||!/^\d{3,4}$/.test(tokens[0])) return null;
-  const last=tokens[tokens.length-1].match(AMT_END);
-  if(!last) return null;
-  let mid=tokens.slice(1,-1), singles=[];
-  while(mid.length){
-    const t=mid[mid.length-1];
-    if(t.length===1&&(FLAGCHARS.includes(t)||t==='J'||t==='N')){singles.unshift(t);mid.pop();continue;}
-    if((/^[\d.,-]+$/.test(t)&&!t.includes('%'))||UNITS.has(t)){mid.pop();continue;}
-    break;
-  }
-  const desc=mid.join(' ');
-  if((desc.match(/[A-Za-zÄÖÜäöüß]/g)||[]).length<2) return null;
-  let tx='',so='',tg='';
-  if(singles.length>=3){[tx,so,tg]=singles.slice(-3);}
-  else if(singles.length===1){tg=singles[0];}
-  if(tg&&tg!=='J'&&tg!=='N'){tx=so;so=tg;tg='';}
-  return {code:tokens[0],desc,amt:last[1]+last[2],tx,so,tg};
+/* ================= RENDER ================= */
+function lineHTML(l,fmt){
+  const ex=explain(l.desc,fmt);
+  return `<details class="line">
+    <summary><span class="l-nm">${l.code?`<span class="code">${l.code}</span>`:''}${l.desc}</span>
+    <span class="l-amt${l.neg?' neg':''}">${l.amt} ${/days/.test(l.amt)?'':CUR[fmt]}</span>
+    <span class="l-caret">▶</span></summary>
+    <div class="l-body">
+      <div class="badges">${badgesFor(l,fmt)}<span class="badge b-info">${ex.title}</span></div>
+      <div class="l-text">${ex.body}</div>
+      ${ex.tip?`<div class="l-tip">${ex.tip}</div>`:''}
+      <div class="l-law">Legal basis: ${ex.law}</div>
+    </div></details>`;
 }
-const MID99=/(99\d{2})\s+([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß./ -]{2,39}?)\s+(\d{1,3}(?:\.\d{3})*,\d{2})(-?)(?:\s|$)/;
-function parseAllLines(lines){
-  const pay=[],info=[],seen=new Set();
-  for(const ln of lines){
-    const r=parseWageLine(ln);
-    if(r&&!r.code.startsWith('99')){pay.push(r);continue;}
-    const m=ln.match(MID99);
-    if(m){const key=m[1]+m[2]+m[3];if(!seen.has(key)){seen.add(key);info.push({code:m[1],desc:m[2].trim(),amt:m[3]+m[4],tx:'',so:'',tg:''});}}
-  }
-  return {pay,info};
-}
-const toNum=s=>parseFloat(s.replace(/\./g,'').replace(',','.'));
-function grab(lines,label){
-  for(const ln of lines){
-    if(ln.includes(label)){const a=ln.match(AMT); if(a) return a[1];}
-  }
-  return null;
-}
-function grabNet(lines){
-  const byLabel=grab(lines,'Auszahlungsbetrag')||grab(lines,'Net income');
-  if(byLabel) return byLabel;
-  // fallback: the bank transfer line (contains an IBAN) ends with the payout amount
-  for(const ln of lines){
-    if(/[A-Z]{2}\d{2}\s?\d{4}/.test(ln)){const a=ln.match(AMT); if(a) return a[1];}
-  }
-  return null;
-}
-
-function renderSlip(lines,total){
-  const {pay,info}=parseAllLines(lines);
-  if(!pay.length){
+function renderSlip(r,lines,totalPages){
+  if(!r.pay.length){
     status.textContent='No wage lines found — this layout isn\'t recognised yet. Use the paste box below for individual lines.';
-    status.classList.add('err'); return;
+    status.classList.add('err');return;
   }
-  status.textContent='Decoded locally ✓'+(total>1?` (file has ${total} pages — showing the first payslip)`:'');
-  const month=(lines.find(l=>/(Pay Advice|Abrechnung|Entgeltabrechnung)/.test(l))||'').match(/for (.+?\d{4})|für (.+?\d{4})/);
-  const grossPrinted=grab(lines,'Total gross income')||grab(lines,'Gesamt-Brutto')||grab(lines,'Gesamtbrutto');
-  const grossCalc=pay.filter(l=>l.tg==='J').reduce((a,l)=>a+toNum(l.amt),0);
-  const gross=grossPrinted||grossCalc.toLocaleString('de-DE',{minimumFractionDigits:2});
-  const net=grabNet(lines);
-
-  let html='';
-  if(month) html+=`<div class="slipmeta">Payslip period: ${month[1]||month[2]}</div>`;
-  html+=`<div class="totals"><div><b>Total gross</b><span>${gross} €</span></div>${net?`<div><b>Net payout</b><span class="netv">${net} €</span></div>`:''}<div><b>Lines decoded</b><span>${pay.length+info.length}</span></div></div>`;
-
-  for(const l of pay.concat(info)){
-    const ex=explain(l.desc);
-    html+=`<div class="line-card">
-      <div class="lc-top"><span class="lc-name"><span class="code">${l.code}</span>${l.desc}</span>
-      <span class="lc-amt${l.amt.endsWith('-')?' neg':''}">${l.amt} €</span></div>
-      <div class="badges">${badges(l.tx,l.so,l.tg)}<span class="badge b-info">${ex.title}</span></div>
-      <div class="lc-body">${ex.body}</div>
-      ${ex.tip?`<div class="lc-tip">${ex.tip}</div>`:''}
-      <div class="lc-law">Legal basis: ${ex.law}</div>
+  status.textContent='Decoded locally ✓'+(totalPages>1?` (file has ${totalPages} pages — showing the first payslip)`:'');
+  const month=(lines.find(l=>/(Pay Advice|Abrechnung|Payroll settlement|Lohnabrechnung)/.test(l))||'').match(/(?:for|für|as per|per)\s+(.+?\d{4})/);
+  const earnings=r.pay.filter(l=>!l.neg),deductions=r.pay.filter(l=>l.neg);
+  let html=`<div class="slipdoc">
+    <div class="slip-head"><span class="t">Your payslip, decoded</span>
+    <span class="cc">${CNAME[r.fmt]}${month?' · '+month[1]:''}</span></div>
+    <div class="totals">
+      ${r.totals.gross?`<div><b>Gross</b><span>${r.totals.gross} ${CUR[r.fmt]}</span></div>`:''}
+      ${r.totals.net?`<div><b>Net</b><span class="netv">${r.totals.net} ${CUR[r.fmt]}</span></div>`:''}
+      <div><b>Lines decoded</b><span>${r.pay.length+r.info.length}</span></div>
     </div>`;
-  }
-  html+=`<p class="unparsed">Flags read from the slip: St/SV <b>L</b> = regular liable, <b>S/E</b> = one-off, <b>F</b> = free, <b>P</b> = flat-rate, <b>N/V</b> = retro/prior year · GB <b>J/N</b> = counted in total gross or not. Statutory deductions (wage tax, KV/PV/RV/AV) are explained line-by-line in the <a href="index.html">calculator</a>.</p>`;
+  if(earnings.length){html+=`<div class="sec-label">Earnings & payments</div>`;earnings.forEach(l=>html+=lineHTML(l,r.fmt));}
+  if(deductions.length){html+=`<div class="sec-label">Deductions & offsets</div>`;deductions.forEach(l=>html+=lineHTML(l,r.fmt));}
+  if(r.info.length){html+=`<div class="sec-label">Further positions</div>`;r.info.forEach(l=>html+=lineHTML(l,r.fmt));}
+  html+=`<div class="slip-foot">Tap any line to expand its explanation. Amounts and rates are read from your slip; explanations are general information for ${CNAME[r.fmt].slice(5)}.</div></div>`;
   results.innerHTML=html;
   results.scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -357,15 +499,14 @@ document.getElementById('pasteBtn').addEventListener('click',doPaste);
 document.getElementById('pasteIn').addEventListener('keydown',e=>{if(e.key==='Enter')doPaste();});
 function doPaste(){
   const v=document.getElementById('pasteIn').value.trim();
-  if(!v) return;
+  if(!v)return;
   const desc=v.replace(/^\s*\d{1,4}\s+/,'');
-  const ex=explain(desc);
-  document.getElementById('pasteOut').innerHTML=`<div class="line-card" style="margin-top:14px">
-    <div class="lc-top"><span class="lc-name">${desc}</span></div>
-    <div class="badges"><span class="badge b-info">${ex.title}</span></div>
-    <div class="lc-body">${ex.body}</div>
-    ${ex.tip?`<div class="lc-tip">${ex.tip}</div>`:''}
-    <div class="lc-law">Legal basis: ${ex.law}</div></div>`;
+  const ex=explain(desc,'ALL');
+  document.getElementById('pasteOut').innerHTML=`<div class="slipdoc" style="margin-top:14px"><details class="line" open>
+    <summary><span class="l-nm">${desc}</span><span></span><span class="l-caret">▶</span></summary>
+    <div class="l-body"><div class="badges"><span class="badge b-info">${ex.title}</span></div>
+    <div class="l-text">${ex.body}</div>${ex.tip?`<div class="l-tip">${ex.tip}</div>`:''}
+    <div class="l-law">Legal basis: ${ex.law}</div></div></details></div>`;
 }
 </script>
 </body>
