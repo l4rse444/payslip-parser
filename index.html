@@ -3,652 +3,345 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payslip Decoded — Understand your German payslip</title>
-<meta name="description" content="Enter your gross salary and see every line of your German payslip explained in plain English. 2026 rates, built by a payroll practitioner.">
+<title>Decode your payslip — Payslip Decoded</title>
+<meta name="description" content="Drop your German payslip PDF and get every line explained in plain English. Parsed entirely in your browser — the file never leaves your device.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
-    --paper:#FFFFFF;
-    --page:#F6F5F1;
-    --ink:#16181D;
-    --ink-soft:#5A6069;
-    --rule:#E3E1DA;
-    --blue:#2D4A8A;        /* Dienstsiegel blue */
-    --blue-soft:#EAEEF7;
-    --marker:#FFE873;      /* highlighter yellow */
-    --green:#1E7F4F;
-    --red:#B4443C;
-    --radius:10px;
-    --mono:'IBM Plex Mono',ui-monospace,monospace;
-    --sans:'Space Grotesk',system-ui,sans-serif;
+    --paper:#FFFFFF;--page:#F6F5F1;--ink:#16181D;--ink-soft:#5A6069;--rule:#E3E1DA;
+    --blue:#2D4A8A;--blue-soft:#EAEEF7;--marker:#FFE873;--green:#1E7F4F;--red:#B4443C;
+    --radius:10px;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'Space Grotesk',system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
   body{font-family:var(--sans);background:var(--page);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
-  a{color:var(--blue)}
-  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-
-  /* ---------- header ---------- */
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px}
   header{border-bottom:1px solid var(--rule);background:var(--paper)}
   .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 0;gap:16px;flex-wrap:wrap}
   .logo{display:flex;align-items:baseline;gap:10px}
-  .logo b{font-size:19px;font-weight:700;letter-spacing:-.01em}
+  .logo b{font-size:19px;font-weight:700}
   .logo span{font-family:var(--mono);font-size:11px;color:var(--ink-soft);border:1px solid var(--rule);border-radius:4px;padding:1px 7px}
-  .tabs{display:flex;gap:6px}
-  .tab{font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:6px;border:1px solid var(--rule);background:var(--paper);color:var(--ink-soft);cursor:default}
-  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .tab .soon{opacity:.55;font-size:10px;margin-left:4px}
-
-  /* ---------- hero ---------- */
-  .hero{padding:44px 0 10px;max-width:720px}
-  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:12px}
-  h1{font-size:clamp(28px,4.4vw,44px);font-weight:700;letter-spacing:-.02em;line-height:1.12}
+  .back{font-size:13px;color:var(--blue);text-decoration:none}
+  .hero{padding:40px 0 8px;max-width:680px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px}
+  h1{font-size:clamp(26px,4vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.15}
   h1 .mk{background:linear-gradient(transparent 58%,var(--marker) 58%)}
-  .sub{margin-top:14px;color:var(--ink-soft);font-size:16px;max-width:600px}
+  .sub{margin-top:12px;color:var(--ink-soft);font-size:15.5px}
+  .privacy{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-family:var(--mono);font-size:12px;background:#EAF4EE;border:1px solid #BFDCCB;color:var(--green);border-radius:99px;padding:6px 14px}
 
-  /* ---------- layout ---------- */
-  .grid{display:grid;grid-template-columns:320px 1fr;gap:22px;padding:30px 0 10px;align-items:start}
-  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .drop{margin:26px 0 10px;border:2px dashed var(--rule);border-radius:var(--radius);background:var(--paper);padding:44px 24px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .drop.over{border-color:var(--blue);background:var(--blue-soft)}
+  .drop h2{font-size:17px;font-weight:600}
+  .drop p{font-size:13px;color:var(--ink-soft);margin-top:6px}
+  .drop .btn{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:13px;background:var(--ink);color:#fff;border-radius:8px;padding:10px 18px}
+  #fileInput{display:none}
+  .status{font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin:10px 0;min-height:20px}
+  .status.err{color:var(--red)}
 
-  /* ---------- form card ---------- */
-  .card{background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);padding:20px}
-  .card h2{font-size:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:16px}
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:13px;font-weight:500;margin-bottom:5px}
-  .field .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px}
-  input[type=number],select{width:100%;font-family:var(--mono);font-size:14px;padding:9px 11px;border:1px solid var(--rule);border-radius:7px;background:#fff;color:var(--ink)}
-  input:focus,select:focus,button:focus-visible,.pl-row:focus-visible,.chip:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .switch{display:flex;gap:8px}
-  .switch button{flex:1;font-family:var(--mono);font-size:13px;padding:8px;border:1px solid var(--rule);border-radius:7px;background:#fff;cursor:pointer;color:var(--ink-soft)}
-  .switch button.on{background:var(--blue-soft);border-color:var(--blue);color:var(--blue);font-weight:600}
-  .note-v56{display:none;font-size:12px;color:var(--red);margin-top:6px}
+  .pastebox{background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);padding:20px;margin:22px 0}
+  .pastebox label{font-size:13px;font-weight:600;display:block;margin-bottom:8px}
+  .pasterow{display:flex;gap:8px;flex-wrap:wrap}
+  .pastebox input{flex:1;min-width:240px;font-family:var(--mono);font-size:13.5px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px}
+  .pastebox button{font-family:var(--sans);font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;border:0;background:var(--blue);color:#fff;cursor:pointer}
+  input:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  .pastebox .hint{font-size:12px;color:var(--ink-soft);margin-top:8px}
 
-  /* ---------- payslip document ---------- */
-  .doc-shell{position:relative}
-  .doc{background:var(--paper);border:1px solid var(--rule);border-radius:3px;box-shadow:0 1px 2px rgba(22,24,29,.05),0 12px 28px -18px rgba(22,24,29,.25);font-family:var(--mono);position:relative;overflow:hidden}
-  .doc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:26px;background:radial-gradient(circle at 13px 12px, var(--page) 4.5px, transparent 5px) repeat-y;background-size:26px 30px;border-right:1px dashed var(--rule)}
-  .doc-inner{padding:26px 30px 26px 52px}
-  .stamp{position:absolute;top:150px;right:-34px;transform:rotate(24deg);font-size:12px;letter-spacing:.34em;color:rgba(45,74,138,.13);border:2px solid rgba(45,74,138,.13);padding:5px 40px;pointer-events:none;user-select:none}
-  .doc-head{display:flex;justify-content:space-between;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:6px;flex-wrap:wrap}
-  .doc-head .t{font-size:14px;font-weight:600}
-  .doc-head .m{font-size:11px;color:var(--ink-soft);text-align:right}
-  .sec-label{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);padding:14px 6px 5px;border-bottom:1px solid var(--rule)}
-  .pl-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:baseline;padding:8px 6px;border-bottom:1px solid var(--rule);cursor:pointer;position:relative;background:transparent;transition:background .12s}
-  .pl-row:hover{background:#FBFAF6}
-  .pl-row .nm{font-size:13px}
-  .pl-row .nm small{display:block;font-family:var(--sans);font-size:11px;color:var(--ink-soft)}
-  .pl-row .basis{font-size:11px;color:var(--ink-soft);text-align:right;min-width:86px}
-  .pl-row .amt{font-size:13.5px;text-align:right;min-width:104px;font-weight:500}
-  .pl-row.neg .amt{color:var(--red)}
-  .pl-row.sel .nm b, .pl-row.sel .nm{position:relative}
-  .pl-row.sel::after{content:"";position:absolute;inset:4px 2px;background:var(--marker);opacity:.5;border-radius:3px;pointer-events:none;animation:swipe .25s ease-out}
-  @keyframes swipe{from{transform:scaleX(.1);transform-origin:left}to{transform:scaleX(1);transform-origin:left}}
-  .pl-total{display:grid;grid-template-columns:1fr auto;gap:14px;padding:12px 6px;font-weight:600;font-size:14px}
-  .pl-total.net{border-top:2px solid var(--ink);font-size:16px}
-  .pl-total.net .amt{color:var(--green)}
-  .pl-total .amt{text-align:right}
-  .empty-doc{padding:70px 30px;text-align:center;color:var(--ink-soft);font-family:var(--sans);font-size:14.5px}
-
-  /* ---------- gross->net bar ---------- */
-  .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:18px 0 6px;border:1px solid var(--rule)}
-  .bar div{height:100%}
-  .bar .b-net{background:var(--green)}
-  .bar .b-tax{background:var(--blue)}
-  .bar .b-sv{background:#8FA3CE}
-  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);font-family:var(--mono)}
-  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
-  .share{margin-left:auto;font-family:var(--mono);font-size:12px;padding:6px 12px;border:1px solid var(--rule);border-radius:99px;background:var(--paper);cursor:pointer;color:var(--ink)}
-  .share:hover{border-color:var(--blue);color:var(--blue)}
-
-  /* ---------- explain panel ---------- */
-  .explain{background:var(--blue-soft);border:1px solid #C9D4EC;border-radius:var(--radius);padding:20px 22px;margin-top:18px;min-height:120px}
-  .explain .de{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--blue)}
-  .explain .en{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
-  .explain p{font-size:14px;margin-bottom:9px}
-  .explain .facts{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
-  .fact{background:#fff;border:1px solid #C9D4EC;border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:12px}
-  .fact b{color:var(--blue)}
-  .tip{border-left:3px solid var(--blue);padding:2px 0 2px 12px;font-size:13.5px;margin-top:10px}
-  .tip b{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);display:block;margin-bottom:2px}
-  .law{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);margin-top:10px}
-
-  /* ---------- glossary ---------- */
-  .gloss{padding:34px 0 10px}
-  .gloss h2{font-size:20px;font-weight:700;margin-bottom:6px}
-  .gloss .lead{color:var(--ink-soft);font-size:14px;margin-bottom:16px;max-width:640px}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{font-family:var(--mono);font-size:12.5px;padding:7px 13px;border:1px solid var(--rule);border-radius:99px;background:var(--paper);cursor:pointer;color:var(--ink)}
-  .chip:hover{border-color:var(--blue);color:var(--blue)}
-  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-
-  /* ---------- email ---------- */
-  .cta{background:var(--ink);color:#fff;border-radius:var(--radius);padding:30px;margin:40px 0;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-  .cta h3{font-size:19px;font-weight:700;letter-spacing:-.01em}
-  .cta p{font-size:13.5px;color:#B9BDC6;margin-top:4px;max-width:440px}
-  .cta form{display:flex;gap:8px;flex-wrap:wrap}
-  .cta input[type=email]{font-family:var(--mono);font-size:13.5px;padding:11px 14px;border-radius:8px;border:1px solid #3A3E46;background:#22252B;color:#fff;min-width:240px}
-  .cta button{font-family:var(--sans);font-weight:600;font-size:14px;padding:11px 18px;border-radius:8px;border:0;background:var(--marker);color:var(--ink);cursor:pointer}
-  .cta .ok{color:var(--marker);font-family:var(--mono);font-size:13.5px;display:none}
-
-  footer{border-top:1px solid var(--rule);padding:26px 0 40px;font-size:12.5px;color:var(--ink-soft)}
-  footer p{max-width:820px;margin-bottom:8px}
-  .foot-meta{font-family:var(--mono);font-size:11.5px;margin-top:12px}
+  .results{margin:8px 0 40px}
+  .slipmeta{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);margin:16px 0 10px}
+  .line-card{background:var(--paper);border:1px solid var(--rule);border-radius:var(--radius);padding:16px 18px;margin-bottom:10px}
+  .lc-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+  .lc-name{font-family:var(--mono);font-size:14px;font-weight:600}
+  .lc-name .code{color:var(--ink-soft);font-weight:400;margin-right:8px}
+  .lc-amt{font-family:var(--mono);font-size:14.5px;font-weight:600}
+  .lc-amt.neg{color:var(--red)}
+  .badges{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;padding:3px 9px;border-radius:99px;border:1px solid}
+  .b-free{color:var(--green);border-color:#BFDCCB;background:#EAF4EE}
+  .b-tax{color:var(--red);border-color:#E7C9C6;background:#F9EFEE}
+  .b-info{color:var(--blue);border-color:#C9D4EC;background:var(--blue-soft)}
+  .lc-body{font-size:13.5px;margin-top:4px}
+  .lc-law{font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-top:8px}
+  .lc-tip{border-left:3px solid var(--blue);padding-left:10px;font-size:13px;margin-top:8px}
+  .totals{background:var(--ink);color:#fff;border-radius:var(--radius);padding:18px 20px;margin:14px 0;display:flex;gap:26px;flex-wrap:wrap;font-family:var(--mono)}
+  .totals div b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#B9BDC6;font-weight:400}
+  .totals div span{font-size:17px;font-weight:600}
+  .totals .netv{color:var(--marker)}
+  .unparsed{font-size:12.5px;color:var(--ink-soft);margin-top:14px}
+  footer{border-top:1px solid var(--rule);padding:24px 0 40px;font-size:12.5px;color:var(--ink-soft)}
+  footer p{max-width:780px;margin-bottom:8px}
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap hd">
-    <div class="logo"><b>Payslip&nbsp;Decoded</b><span>DE · 2026 rates</span></div>
-    <nav class="tabs" aria-label="Country">
-      <span class="tab on">🇩🇪 Germany</span>
-      <span class="tab">🇦🇹 Austria <span class="soon">soon</span></span>
-      <span class="tab">🇨🇭 Switzerland <span class="soon">soon</span></span>
-    </nav>
+    <div class="logo"><b>Payslip&nbsp;Decoded</b><span>DE · PDF decoder beta</span></div>
+    <a class="back" href="index.html">← Net salary calculator</a>
   </div>
 </header>
 
 <main class="wrap">
-
   <section class="hero">
-    <div class="eyebrow">For expats &amp; new arrivals in Germany</div>
-    <h1>Your German payslip, <span class="mk">finally explained.</span></h1>
-    <p class="sub">Enter your gross salary and get a realistic payslip with every deduction decoded — what it is, why you pay it, and the exact 2026 rate. Click any line. No signup, nothing leaves your browser.</p>
+    <div class="eyebrow">Beta — SAP pay advice format first</div>
+    <h1>Drop your payslip. <span class="mk">Get every line explained.</span></h1>
+    <p class="sub">Works with SAP-style German pay advices (German or English labels). Other formats: use the paste box below — it understands standard German payroll vocabulary.</p>
+    <div class="privacy">🔒 100% in your browser — the file is never uploaded anywhere</div>
   </section>
 
-  <section class="grid">
+  <div class="drop" id="drop" role="button" tabindex="0" aria-label="Drop a payslip PDF here or click to choose a file">
+    <h2>Drag your payslip PDF here</h2>
+    <p>or</p>
+    <span class="btn">Choose file</span>
+    <input type="file" id="fileInput" accept="application/pdf">
+  </div>
+  <div class="status" id="status"></div>
+  <div class="results" id="results"></div>
 
-    <!-- ============ INPUTS ============ -->
-    <div class="card" id="inputs">
-      <h2>Your details</h2>
-
-      <div class="field">
-        <label for="gross">Gross monthly salary (€)</label>
-        <input type="number" id="gross" value="5000" min="0" step="100" inputmode="decimal">
-        <div class="hint">Brutto, before anything is deducted.</div>
-      </div>
-
-      <div class="field">
-        <label for="taxclass">Tax class (Steuerklasse)</label>
-        <select id="taxclass">
-          <option value="1">I — single</option>
-          <option value="2">II — single parent</option>
-          <option value="3">III — married, higher earner</option>
-          <option value="4">IV — married, similar income</option>
-          <option value="5">V — married, lower earner</option>
-          <option value="6">VI — second job</option>
-        </select>
-        <div class="note-v56" id="v56note">Classes V/VI: modelled with the statutory doubled-tariff method (§39b EStG), but without its low-income minimum-rate clauses — expect small deviations at low salaries.</div>
-      </div>
-
-      <div class="row2">
-        <div class="field">
-          <label for="state">Federal state</label>
-          <select id="state">
-            <option value="BW">Baden-Württemberg</option>
-            <option value="BY">Bavaria</option>
-            <option value="BE" selected>Berlin</option>
-            <option value="BB">Brandenburg</option>
-            <option value="HB">Bremen</option>
-            <option value="HH">Hamburg</option>
-            <option value="HE">Hesse</option>
-            <option value="MV">Mecklenburg-Vorpommern</option>
-            <option value="NI">Lower Saxony</option>
-            <option value="NW">North Rhine-Westphalia</option>
-            <option value="RP">Rhineland-Palatinate</option>
-            <option value="SL">Saarland</option>
-            <option value="SN">Saxony</option>
-            <option value="ST">Saxony-Anhalt</option>
-            <option value="SH">Schleswig-Holstein</option>
-            <option value="TH">Thuringia</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="kids">Children (under 25)</label>
-          <select id="kids">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5+</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Church tax member?</label>
-        <div class="switch" id="churchSwitch">
-          <button type="button" data-v="0" class="on">No</button>
-          <button type="button" data-v="1">Yes</button>
-        </div>
-        <div class="hint">Registered Catholic or Protestant. You chose this on your Anmeldung form — many expats don't realise they did.</div>
-      </div>
-
-      <div class="field">
-        <label for="zb">Health insurance add-on rate (Zusatzbeitrag, %)</label>
-        <input type="number" id="zb" value="2.9" min="0" max="5" step="0.1" inputmode="decimal">
-        <div class="hint">Set by your Krankenkasse. 2026 average: 2.9%. Check your card or payslip.</div>
-      </div>
+  <div class="pastebox">
+    <label for="pasteIn">No PDF at hand, or a different format? Paste any payslip line:</label>
+    <div class="pasterow">
+      <input id="pasteIn" placeholder='e.g. "101 Zuschlag 25% Nightshift" or "Urlaubsabgeltung"'>
+      <button id="pasteBtn" type="button">Explain it</button>
     </div>
-
-    <!-- ============ PAYSLIP ============ -->
-    <div class="doc-shell">
-      <div class="doc" id="doc" aria-live="polite">
-        <div class="stamp">SCHÄTZUNG · ESTIMATE</div>
-        <div class="doc-inner">
-          <div class="doc-head">
-            <div>
-              <div class="t">Entgeltabrechnung</div>
-              <div style="font-size:11px;color:var(--ink-soft)">Abrechnungsmonat: <span id="docMonth"></span></div>
-            </div>
-            <div class="m">Steuerklasse <span id="docClass">I</span> · <span id="docState">Berlin</span><br>Kirchensteuer: <span id="docChurch">nein</span> · Kinder: <span id="docKids">0</span></div>
-          </div>
-
-          <div class="sec-label">Bezüge / Earnings</div>
-          <div id="earnRows"></div>
-
-          <div class="sec-label">Gesetzliche Abzüge / Statutory deductions</div>
-          <div id="dedRows"></div>
-
-          <div class="pl-total"><span>Summe Abzüge / Total deductions</span><span class="amt" id="totDed" style="color:var(--red)"></span></div>
-          <div class="pl-total net"><span>Auszahlungsbetrag / Net pay</span><span class="amt" id="totNet"></span></div>
-
-          <div class="sec-label">Arbeitgeberanteile / What your employer pays on top (you never see this)</div>
-          <div id="erRows"></div>
-          <div class="pl-total"><span>Gesamtkosten Arbeitgeber / True cost of employing you</span><span class="amt" id="totCost"></span></div>
-        </div>
-      </div>
-
-      <div class="bar" id="bar" role="img" aria-label="Split of gross salary into net, taxes and social insurance"></div>
-      <div class="legend">
-        <span><i style="background:var(--green)"></i>Net <b id="lgNet"></b></span>
-        <span><i style="background:var(--blue)"></i>Taxes <b id="lgTax"></b></span>
-        <span><i style="background:#8FA3CE"></i>Social insurance <b id="lgSv"></b></span>
-        <button class="share" id="shareBtn" type="button">⧉ Copy link to this calculation</button>
-      </div>
-
-      <div class="explain" id="explain">
-        <div class="de">Click any line on the payslip ↑</div>
-        <p style="margin-top:8px">Every deduction gets a plain-English explanation: what it funds, the 2026 rate, the legal basis, and a tip most expats learn too late.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ GLOSSARY ============ -->
-  <section class="gloss">
-    <h2>Other things on your real payslip</h2>
-    <p class="lead">Real payslips contain more than deductions. Click a term to decode it.</p>
-    <div class="chips" id="chips"></div>
-  </section>
-
-  <!-- ============ EMAIL ============ -->
-  <section class="cta">
-    <div>
-      <h3>The full expat payslip guide is coming.</h3>
-      <p>Tax class optimisation for couples, what to check in your first payslip, and how to claim money back — written by a payroll practitioner, not a content farm.</p>
-    </div>
-    <form id="ctaForm">
-      <input type="email" placeholder="you@example.com" required aria-label="Email address">
-      <button type="submit">Notify me</button>
-      <span class="ok" id="ctaOk">✓ You're on the list.</span>
-    </form>
-  </section>
-
+    <div class="hint">Try: Sachbezug · Betr.AV · Abfindung · Firmenrabatt · Mutterschaftsgeldzuschuss · backdated</div>
+    <div id="pasteOut"></div>
+  </div>
 </main>
 
 <footer>
   <div class="wrap">
-    <p><b>This is an estimate, not tax or legal advice.</b> It uses the official 2026 income tax tariff (§32a EStG) and 2026 social insurance parameters, but simplifies the exact wage-tax procedure (Programmablaufplan): classes V/VI use the statutory doubled-tariff method without its low-income minimum-rate clauses; Kinderfreibeträge in the church tax/Soli calculation, private health insurance, company benefits and one-off payments are not yet modelled. The Soli threshold shown (€19,950) is the 2025 statutory value — 2026 figure pending verification. Your payroll department's numbers win.</p>
-    <p>All calculation happens locally in your browser. Nothing you type is sent anywhere.</p>
-    <div class="foot-meta">Rates: 2026 · BBG KV/PV €5,812.50/mo · BBG RV/AV €8,450/mo · Ø Zusatzbeitrag 2.9% · Grundfreibetrag €12,348 · Last checked: July 2026</div>
+    <p><b>Estimates and general explanations, not tax or legal advice.</b> Line classification uses the printed tax/SV flags where available and keyword matching otherwise; unusual company-specific wage types may be explained generically or not at all. Multi-slip PDFs: only the first payslip is decoded.</p>
+    <p>Parsing runs entirely on your device via pdf.js. Nothing you drop here is transmitted, stored, or logged.</p>
   </div>
 </footer>
 
 <script>
 /* =========================================================
-   2026 PARAMETERS — single source of truth. Update yearly.
+   EXPLANATION ENGINE — keyword rules, evaluated top-down.
+   Generic German payroll vocabulary; not employer-specific.
    ========================================================= */
-const P = {
-  year: 2026,
-  bbgKV: 5812.50,          // monthly ceiling, health & care (KV/PV)
-  bbgRV: 8450.00,          // monthly ceiling, pension & unemployment (RV/AV)
-  kvGeneral: 14.6,         // % split 50/50
-  zbDefault: 2.9,          // avg. Zusatzbeitrag, split 50/50
-  pvTotal: 3.6,            // % split 50/50 outside Saxony
-  pvChildless: 0.6,        // employee surcharge, no kids, 23+
-  pvKidRebate: 0.25,       // per child 2..5 under 25, employee side
-  rv: 18.6, av: 2.6,       // % split 50/50
-  grundfreibetrag: 12348,
-  werbungskosten: 1230, sonderausgaben: 36,
-  entlastungII: 4260,      // single-parent relief, class II
-  soliFrei: 19950,         // annual wage tax threshold (single)
-  soliRate: .055, soliMild: .119
-};
-const churchRate = st => (st === 'BY' || st === 'BW') ? 8 : 9;
-
-/* ---- §32a EStG, 2026 tariff ---- */
-function tariff(zvE){
-  const x = Math.floor(zvE);
-  if (x <= 12348) return 0;
-  if (x <= 17799){ const y=(x-12348)/1e4; return Math.floor((914.51*y+1400)*y); }
-  if (x <= 69878){ const z=(x-17799)/1e4; return Math.floor((173.10*z+2397)*z+1034.87); }
-  if (x <= 277825) return Math.floor(0.42*x-11135.63);
-  return Math.floor(0.45*x-19470.38);
+const RULES = [
+ {re:/backdated|nachber|nachzahl|rückrechn/i, title:'Retro calculation (Nachberechnung)',
+  body:'A correction of a previous month — e.g. a late raise, corrected hours, or a backdated absence. The system recalculates the old period and books the difference into this payslip. For tax it counts in the month it is paid; for social insurance it is attributed back to the period it was earned.',
+  law:'§11 EStG (Zuflussprinzip); §22 SGB IV', tip:'A retro line plus a normal line with the same name is expected — one is this month, one is the correction.'},
+ {re:/zuschlag|nightshift|night\s?work|sonntag|sunday|feiertag|holiday\s?(hrs|hours|%)|public holiday/i, title:'SFN supplement (night/Sunday/holiday premium)',
+  body:'Premiums for night, Sunday and public-holiday work are tax- and social-insurance-free within legal limits: up to 25% for night work (40% between 0–4h), 50% for Sundays, and 125–150% for public holidays — calculated on a base hourly wage of at most €50 (tax) / €25 (social insurance). That is why these lines carry tax-free flags.',
+  law:'§3b EStG; §1 SvEV', tip:'Tax-free only for hours actually worked at those times — flat monthly allowances do not qualify.'},
+ {re:/sachbezug/i, title:'Benefit in kind (Sachbezug)',
+  body:'A non-cash benefit — typically vouchers or benefit cards. Up to €50 per month it is completely tax- and contribution-free (Sachbezugsfreigrenze). One cent over the limit and the entire amount becomes taxable, which is why the value is usually pinned just below €50.',
+  law:'§8 Abs. 2 S. 11 EStG', tip:'The amount appears in gross and is deducted again at the bottom — it inflates the payslip visually but was never cash.'},
+ {re:/firmenrabatt|personalrabatt|rabatt/i, title:'Staff discount (Firmen-/Personalrabatt)',
+  body:'Discounts on your employer\'s own products or services. Tax-free up to €1,080 per year after a 4% valuation discount (Rabattfreibetrag). Shown on the payslip for documentation and deducted again as a non-cash item.',
+  law:'§8 Abs. 3 EStG', tip:'Only applies to goods/services your employer sells to customers — not to third-party perks.'},
+ {re:/betr\.?\s?av|bav|altersvorsorge|entgeltumwandlung|direktvers/i, title:'Company pension (bAV)',
+  body:'Contributions to an occupational pension. Tax-free up to 8% of the pension ceiling (2026: €8,112/yr) and social-insurance-free up to 4% (€4,056/yr) — which is why you may see separate ST-frei, SV-pfl and ST-pfl variants of the same item once limits are exceeded. Employer contributions (AG) and your own converted salary (AN) are booked on separate lines.',
+  law:'§3 Nr. 63 EStG; §1a BetrAVG', tip:'Lines flagged "N" are not part of your total gross — they route money past the payslip into the pension contract.'},
+ {re:/abfindung|severance/i, title:'Severance payment (Abfindung)',
+  body:'Compensation for losing your job. It is fully taxable but free of social insurance contributions. Since 2025 the payroll department no longer applies the "Fünftelregelung" tax smoothing — you claim it yourself in your tax return, where a large severance can save thousands.',
+  law:'§34 EStG; §14 SGB IV (SV-free)', tip:'File a tax return in the severance year and check the Fünftelregelung — it is no longer automatic.'},
+ {re:/muttersch|maternity/i, title:'Maternity pay top-up (Zuschuss zum Mutterschaftsgeld)',
+  body:'During the protection period your health insurer pays €13/day and your employer tops it up to your previous net. The top-up is tax- and contribution-free, but it is subject to Progressionsvorbehalt: it raises the tax rate applied to your other income in the annual assessment.',
+  law:'§20 MuSchG; §3 Nr. 1d, §32b EStG', tip:'Expect this to affect your tax return result even though no tax was withheld on it.'},
+ {re:/esop|mitarbeiterbeteiligung|aktienoption|share|equity|rsu/i, title:'Employee equity (ESOP/shares)',
+  body:'Equity benefits are taxed as a benefit in kind when you receive or exercise them, at your normal progressive rate. Up to €2,000 per year can be tax-free if granted by the employer under the participation allowance, and startups may defer taxation under §19a.',
+  law:'§3 Nr. 39, §19a EStG', tip:'A big equity line can push the month\'s withholding up sharply — the annualised one-off method smooths this in your tax return.'},
+ {re:/urlaubsabgeltung/i, title:'Payout of unused holiday (Urlaubsabgeltung)',
+  body:'Remaining vacation days paid out in cash, usually when leaving. Fully taxable and contribution-liable, taxed as a one-off payment using the annualised method — so the deduction on this single slip looks disproportionately high.',
+  law:'§7 Abs. 4 BUrlG', tip:'Only allowed at termination — during employment, holiday must be taken, not sold.'},
+ {re:/referral/i, title:'Referral bonus', body:'A reward for recommending a hire. Ordinary taxable pay, treated as a one-off payment — taxed and contribution-liable in full.', law:'§19 EStG', tip:'The net you keep is often only ~55–60% of the headline amount; that is normal, not an error.'},
+ {re:/bonus|commission|provision|prämie|tantieme|performance/i, title:'Bonus / commission',
+  body:'Variable pay is fully taxable and contribution-liable. As a one-off payment (sonstiger Bezug) it is taxed with the annualised method: the system asks "what would the yearly tax be with and without this payment" and withholds the difference — the spike in this month\'s deductions is expected.',
+  law:'§39b Abs. 3 EStG', tip:'If the ceiling for pension/health contributions is reached this month, part of the bonus escapes social insurance — check the Contr.income lines.'},
+ {re:/überstund|overtime|mehrarbeit/i, title:'Overtime',
+  body:'Paid overtime is ordinary taxable, contribution-liable pay. The premium portion (e.g. +25%) is NOT tax-free — only night/Sunday/holiday supplements enjoy that privilege.',
+  law:'§19 EStG', tip:'Overtime in a high-earning month can be taxed noticeably above your average rate — progression at work, refunded via the tax return if your year is uneven.'},
+ {re:/unpaid|unbezahlt/i, title:'Unpaid leave',
+  body:'Hours or days without pay reduce your gross proportionally. Short unpaid leave keeps your insurance intact; if it exceeds one month, health insurance coverage through the employer ends and you must insure yourself.',
+  law:'§7 Abs. 3 SGB IV', tip:'Watch the one-month limit — it is a real coverage cliff, not a formality.'},
+ {re:/kurzarbeit/i, title:'Short-time work (Kurzarbeitergeld)',
+  body:'The Agentur für Arbeit replaces 60% (67% with children) of the lost net. The benefit itself is tax-free but raises your tax rate on other income (Progressionsvorbehalt), and receiving it obliges you to file a tax return.',
+  law:'§95 ff. SGB III; §32b EStG', tip:'Many Kurzarbeit recipients face a small back-payment at assessment — plan for it.'},
+ {re:/gehalt|grundgehalt|salary/i, title:'Base salary (Gehalt)',
+  body:'Your contractual monthly gross — the anchor every deduction is calculated from. Fully taxable and contribution-liable up to the respective ceilings.',
+  law:'§611a BGB', tip:'Compare against your contract after every raise — retro lines should appear if a raise was late.'},
+ {re:/stundenlohn|hourly/i, title:'Hourly wage (Stundenlohn)',
+  body:'Base pay calculated as hours × rate. Check the quantity column against your own time records — hour-based pay is where most payslip errors hide.',
+  law:'§611a BGB; MiLoG (minimum wage 2026: €13.90)', tip:'2026 minimum wage is €13.90/h — the quantity × rate on this line must respect it.'},
+ {re:/sick|krank|entgeltfortzahlung/i, title:'Sick pay (Entgeltfortzahlung)',
+  body:'Your employer continues 100% of pay for up to 6 weeks per illness. On hourly contracts it appears as a separate line valuing the sick hours. After 6 weeks the Krankenkasse takes over with ~70% of gross.',
+  law:'EFZG; §44 SGB V', tip:'Separate illnesses restart the 6-week clock; the same illness does not.'},
+ {re:/holiday hourly|urlaubsentgelt|urlaubslohn/i, title:'Holiday pay (hourly)',
+  body:'Vacation hours paid at your average earnings of the last 13 weeks — including regular supplements, which people often don\'t realise.',
+  law:'§11 BUrlG', tip:'If you regularly work paid night shifts, your holiday hour should be worth more than your base hour.'},
+ {re:/vermögensbildung|vwl|vermögenswirksam/i, title:'Capital-forming payments (VL)',
+  body:'A small employer top-up (up to €40/month) paid into a savings contract you choose. Legacy benefit, frequently unclaimed.',
+  law:'5. VermBG', tip:'If this line is missing and your contract or collective agreement offers VL — ask. It is free money.'},
+ {re:/ag-zuschuss.*kv|zuschuss.*krankenversich/i, title:'Employer subsidy to health insurance',
+  body:'For voluntarily or privately insured employees, the employer pays a subsidy of half the contribution, capped at half the maximum statutory contribution (2026: max €508.59 for KV). Shown informationally; the full premium is on the companion "Gesamtbeitrag" line.',
+  law:'§257 SGB V', tip:'Check the subsidy is actually half your premium up to the cap — a stale premium on file is a common error.'},
+ {re:/gesamtbeitrag/i, title:'Total insurance premium (informational)',
+  body:'The full monthly premium of your voluntary/private insurance that the employer forwards or you pay directly. Informational — the money movement is shown in the deduction block.',
+  law:'§257 SGB V', tip:null},
+ {re:/abschlag|vorschuss|advance/i, title:'Advance payment (Abschlag/Vorschuss)',
+  body:'Money you already received earlier in the month, now settled against your net. It reduces the payout, not your gross — no tax effect.',
+  law:'—', tip:'Advance in one month, lower payout the next: always read both slips together.'},
+ {re:/parental|eltern/i, title:'Parental leave bonus',
+  body:'An employer-paid bonus around parental leave. Unless a specific exemption applies, employer top-ups during parental leave are taxable pay (unlike state Elterngeld, which is tax-free with Progressionsvorbehalt).',
+  law:'§19 EStG; BEEG (Elterngeld)', tip:'Employer top-ups can reduce your Elterngeld if paid during the reference or benefit period — time them carefully.'},
+];
+function explain(desc){
+  for (const r of RULES) if (r.re.test(desc)) return r;
+  return {title:'Company-specific wage type', body:'This label doesn\'t match standard German payroll vocabulary — it is likely a company-specific item. The tax/SV flag badges above still tell you how it is treated.', law:'—', tip:'Ask payroll for this Lohnart\'s definition; every code has one.'};
 }
 
-const fmt = n => n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
-const pct = n => n.toLocaleString('de-DE',{maximumFractionDigits:3}) + ' %';
+/* ---------- flag badges ---------- */
+function badges(tx,so,tg){
+  const b=[];
+  if(tx==='F') b.push(['b-free','TAX-FREE']); else if(tx==='L') b.push(['b-tax','TAXABLE']);
+  if(so==='F') b.push(['b-free','SV-FREE']);  else if(so==='L') b.push(['b-tax','SV-LIABLE']);
+  if(tg==='J') b.push(['b-info','IN GROSS']); else if(tg==='N') b.push(['b-info','NOT IN GROSS']);
+  return b.map(x=>`<span class="badge ${x[0]}">${x[1]}</span>`).join('');
+}
+const fmtA = s => s; // amounts kept as printed (German format)
 
 /* =========================================================
-   CALC
+   PDF PARSING (pdf.js, fully client-side)
    ========================================================= */
-function calc(){
-  const gross = Math.max(0, parseFloat(document.getElementById('gross').value) || 0);
-  const cls   = document.getElementById('taxclass').value;
-  const state = document.getElementById('state').value;
-  const kids  = parseInt(document.getElementById('kids').value);
-  const church= document.querySelector('#churchSwitch .on').dataset.v === '1';
-  const zb    = Math.max(0, parseFloat(document.getElementById('zb').value) || 0);
-  const saxony= state === 'SN';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  document.getElementById('v56note').style.display = (cls==='5'||cls==='6') ? 'block' : 'none';
+const drop=document.getElementById('drop'), fi=document.getElementById('fileInput'),
+      status=document.getElementById('status'), results=document.getElementById('results');
 
-  /* --- social insurance, employee (monthly) --- */
-  const kvBase = Math.min(gross, P.bbgKV), rvBase = Math.min(gross, P.bbgRV);
-  const kvEmpRate = P.kvGeneral/2 + zb/2;
-  const kvEmp = kvBase * kvEmpRate/100;
+drop.addEventListener('click',()=>fi.click());
+drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click();}});
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f) handleFile(f);});
+fi.addEventListener('change',()=>{if(fi.files[0]) handleFile(fi.files[0]);});
 
-  let pvEmpRate = saxony ? 2.3 : P.pvTotal/2;
-  if (kids === 0) pvEmpRate += P.pvChildless;
-  else if (kids >= 2) pvEmpRate -= P.pvKidRebate * Math.min(kids-1, 4);
-  const pvEmp = kvBase * pvEmpRate/100;
-
-  const rvEmp = rvBase * (P.rv/2)/100;
-  const avEmp = rvBase * (P.av/2)/100;
-  const svEmp = kvEmp + pvEmp + rvEmp + avEmp;
-
-  /* --- employer side (monthly) --- */
-  const kvEr = kvBase * kvEmpRate/100;
-  const pvEr = kvBase * (saxony ? 1.3 : P.pvTotal/2)/100;
-  const rvEr = rvBase * (P.rv/2)/100;
-  const avEr = rvBase * (P.av/2)/100;
-  const svEr = kvEr + pvEr + rvEr + avEr;
-
-  /* --- wage tax (annualised estimate) --- */
-  const aGross = gross*12;
-  const vorsorge = (rvEmp + kvEmp + pvEmp) * 12;      // Vorsorgepauschale approximation
-  let zvE = aGross - vorsorge;
-  if (cls !== '6') zvE -= (P.werbungskosten + P.sonderausgaben); // class VI: no employee allowances (§39b Abs.2 EStG)
-  if (cls === '2') zvE -= P.entlastungII;
-  zvE = Math.max(0, zvE);
-
-  const splitting = cls === '3';
-  let aLSt;
-  if (cls === '5' || cls === '6'){
-    // §39b Abs.2 S.7 EStG: doubled-difference method for classes V/VI.
-    // Minimum-rate clauses (14%/42%/45% floors) not modelled — small deviation at low incomes.
-    aLSt = Math.max(0, 2*(tariff(1.25*zvE) - tariff(0.75*zvE)));
-  } else {
-    aLSt = splitting ? 2*tariff(zvE/2) : tariff(zvE);
-  }
-
-  const frei = splitting ? P.soliFrei*2 : P.soliFrei;
-  const aSoli = aLSt > frei ? Math.min(P.soliRate*aLSt, P.soliMild*(aLSt-frei)) : 0;
-  const aKiSt = church ? aLSt * churchRate(state)/100 : 0;
-
-  const lst = aLSt/12, soli = aSoli/12, kist = aKiSt/12;
-  const tax = lst + soli + kist;
-  const net = gross - tax - svEmp;
-
-  return {gross,cls,state,kids,church,zb,saxony,kvBase,rvBase,
-          kvEmp,kvEmpRate,pvEmp,pvEmpRate,rvEmp,avEmp,svEmp,
-          kvEr,pvEr,rvEr,avEr,svEr,
-          lst,soli,kist,tax,net,zvE,aLSt};
-}
-
-/* =========================================================
-   EXPLANATIONS — the actual product.
-   ========================================================= */
-function EX(r){
-  const kistR = churchRate(r.state);
-  return {
-  gehalt:{de:'Gehalt / Grundgehalt',en:'Base salary',
-    body:'Your contractual gross monthly salary — the number in your employment contract. Everything below is calculated from it. In Germany salaries are almost always quoted as annual gross ("Jahresbrutto") in offers but paid in 12 monthly instalments unless your contract grants a 13th salary or bonuses.',
-    facts:[['Basis','Employment contract']],
-    tip:'Negotiate gross, but always sanity-check the net. Two identical gross offers can differ by hundreds of euros net depending on your tax class and insurance.',
-    law:'§611a BGB (employment contract)'},
-
-  lst:{de:'Lohnsteuer',en:'Wage tax (income tax withheld at source)',
-    body:'A prepayment of your income tax, withheld by your employer every month and sent to the Finanzamt. The rate is progressive — from 14% above the tax-free allowance up to 45% — and your Steuerklasse controls how much is withheld each month (not how much you ultimately owe).',
-    facts:[['Tax-free allowance 2026',fmt2(P.grundfreibetrag)],['Estimated taxable income',fmt2(Math.round(r.zvE))],['Progressive rate','14–45%']],
-    tip:'The Lohnsteuer is only a prepayment. Most employees who file a tax return (Steuererklärung) get money back — the average refund is over €1,000. Commuting, home office, work equipment and relocation costs are all deductible.',
-    law:'§38 EStG (withholding), §32a EStG (tariff)'},
-
-  soli:{de:'Solidaritätszuschlag',en:'Solidarity surcharge',
-    body:'A 5.5% surcharge on your wage tax, introduced in 1991 to fund German reunification. Since 2021 it has been abolished for about 90% of employees: it only applies once your annual wage tax exceeds €19,950 (single) / €39,900 (class III), then phases in gradually.',
-    facts:[['Rate','5.5% of wage tax'],['Threshold 2026 (single)',fmt2(P.soliFrei)+' wage tax/yr'],['Your amount',fmt(r.soli)+' /mo']],
-    tip:r.soli===0?'You are below the threshold — you pay no Soli at all. If a payslip line still shows it, ask payroll why.':'You are above the exemption threshold, so Soli applies. Within the sliding zone it grows faster than 5.5%, then caps.',
-    law:'SolZG 1995'},
-
-  kist:{de:'Kirchensteuer',en:'Church tax',
-    body:'Germany collects membership fees for recognised churches through payroll: '+kistR+'% of your wage tax in '+stateName(r.state)+' ('+(kistR===8?'8% applies in Bavaria and Baden-Württemberg':'9% in most states')+'). You pay it only if you are a registered member — a box many expats tick on their Anmeldung without realising the consequence.',
-    facts:[['Rate in '+stateName(r.state),kistR+'% of wage tax'],['Your amount',fmt(r.kist)+' /mo']],
-    tip:'Leaving the church (Kirchenaustritt) is a formal act at the Standesamt or Amtsgericht, costs ~€30–60 depending on the state, and stops the tax from the following month. It also has consequences (e.g. church weddings), so it\'s a personal decision — but it should be an informed one.',
-    law:'Art. 140 GG, state KiStG'},
-
-  kv:{de:'Krankenversicherung (KV)',en:'Public health insurance',
-    body:'Statutory health insurance. The general rate is 14.6% plus your insurer\'s individual add-on (Zusatzbeitrag, 2026 average 2.9%) — both split 50/50 with your employer. Your share: '+pct(r.kvEmpRate)+'. Contributions are only charged up to the assessment ceiling of '+fmt(P.bbgKV)+'/month; income above that is contribution-free.',
-    facts:[['General rate','14.6% (½ each)'],['Your Zusatzbeitrag',pct(r.zb)+' (½ each)'],['Ceiling 2026',fmt(P.bbgKV)+' /mo'],['Charged on',fmt(r.kvBase)]],
-    tip:'The Zusatzbeitrag varies between Krankenkassen by more than a full percentage point. Switching insurer is a simple online form and can save several hundred euros a year — coverage is 95% identical by law.',
-    law:'§241, §242 SGB V'},
-
-  pv:{de:'Pflegeversicherung (PV)',en:'Long-term care insurance',
-    body:'Funds nursing and long-term care. Base rate 3.6%'+(r.saxony?' — but in Saxony the split is unusual: employees pay 2.3% and employers only 1.3%, a relic of Saxony keeping a public holiday in 1995.':', split 50/50.')+' Childless employees over 23 pay a 0.6% surcharge; parents get a 0.25% rebate per child (2nd–5th, under 25). Your rate: '+pct(r.pvEmpRate)+'.',
-    facts:[['Base rate','3.6%'],['Your rate',pct(r.pvEmpRate)],['Children counted',String(r.kids)],['Ceiling',fmt(P.bbgKV)+' /mo']],
-    tip:'Payroll can only apply the parent rebate if your children are on file. New parent? Send the birth certificate to HR — the reduction is not automatic and refunds are limited.',
-    law:'§55 SGB XI'},
-
-  rv:{de:'Rentenversicherung (RV)',en:'Public pension insurance',
-    body:'The state pension. 18.6% of gross up to '+fmt(P.bbgRV)+'/month, split 50/50 — your 9.3% share buys pension points (Entgeltpunkte) based on how your income compares to the national average (~€51,944 in 2026). One point ≈ one average-earner year.',
-    facts:[['Rate','18.6% (½ each)'],['Ceiling 2026',fmt(P.bbgRV)+' /mo'],['Charged on',fmt(r.rvBase)]],
-    tip:'Leaving Germany for good? Non-EU citizens can often claim a refund of their employee contributions after a 24-month waiting period if they paid in for under 5 years. EU citizens instead keep the entitlement and can combine it with other EU pensions.',
-    law:'SGB VI'},
-
-  av:{de:'Arbeitslosenversicherung (AV)',en:'Unemployment insurance',
-    body:'Funds unemployment benefit (Arbeitslosengeld I): roughly 60% of your previous net (67% with children) for up to 12 months, if you\'ve contributed at least 12 of the last 30 months. Rate 2.6%, split 50/50, same ceiling as pension.',
-    facts:[['Rate','2.6% (½ each)'],['Ceiling',fmt(P.bbgRV)+' /mo'],['Benefit','~60% of net, up to 12 mo']],
-    tip:'ALG I is also available to expats who lose their job — but register with the Agentur für Arbeit within 3 days of learning your end date, or your benefit gets docked.',
-    law:'SGB III'},
-
-  erkv:{de:'AG-Anteil Krankenversicherung',en:'Employer share, health insurance',
-    body:'Your employer pays the same health insurance contribution you do — '+pct(r.kvEmpRate)+' on the capped base. It never appears in your gross, but it is part of what you actually cost.',
-    facts:[['Employer pays',fmt(r.kvEr)+' /mo']],tip:null,law:'§249 SGB V'},
-  erpv:{de:'AG-Anteil Pflegeversicherung',en:'Employer share, care insurance',
-    body:'The employer half of care insurance'+(r.saxony?' — reduced to 1.3% in Saxony.':' (1.8%).'),
-    facts:[['Employer pays',fmt(r.pvEr)+' /mo']],tip:null,law:'§58 SGB XI'},
-  errv:{de:'AG-Anteil Rentenversicherung',en:'Employer share, pension',
-    body:'Your employer matches your 9.3% pension contribution euro for euro. Total flowing into your pension: '+fmt(r.rvEmp+r.rvEr)+' every month.',
-    facts:[['Employer pays',fmt(r.rvEr)+' /mo']],tip:null,law:'§168 SGB VI'},
-  erav:{de:'AG-Anteil Arbeitslosenversicherung',en:'Employer share, unemployment',
-    body:'The employer half of unemployment insurance (1.3%). Employers additionally pay small levies you never see (U1 sick-pay levy, U2 maternity levy, insolvency levy 0.15%) — not shown here as they vary by Krankenkasse.',
-    facts:[['Employer pays',fmt(r.avEr)+' /mo']],tip:null,law:'§346 SGB III'},
-
-  /* ---- glossary ---- */
-  g_stkl:{de:'Steuerklasse I–VI',en:'Tax classes',
-    body:'Six withholding classes that control your monthly wage tax — not your final tax bill. I: single. II: single parents (extra relief). III/V: married couples splitting favourably toward the higher earner. IV/IV: married, similar incomes. VI: second job (harshest). Couples can switch combination once a year — worth recalculating after any salary change.',
-    facts:[['Change via','Finanzamt / ELSTER form']],
-    tip:'III/V often boosts monthly cash flow but can trigger a tax *bill* at year-end and reduces the lower earner\'s parental benefit (Elterngeld). Check before a planned parental leave — switching early matters because Elterngeld looks at the last 12 months.',law:'§38b EStG'},
-  g_svnr:{de:'SV-Nummer',en:'Social insurance number',
-    body:'Your lifetime social security ID (format: 12 characters including your birth date and a letter). Issued once, usually triggered by your first German employer. It tracks your pension record. Not the same as your Steuer-ID.',
-    facts:[['Issued by','Deutsche Rentenversicherung']],
-    tip:'Lost it? It\'s on any old payslip or your Sozialversicherungsausweis, or request it free from the DRV. New employers always ask for it.',law:'§147 SGB VI'},
-  g_stid:{de:'Steuer-ID',en:'Tax identification number',
-    body:'An 11-digit number assigned to every resident for life, mailed to you automatically ~2 weeks after your first Anmeldung. Your employer needs it to run payroll properly — without it you get taxed at the punitive class VI rate until it arrives.',
-    facts:[['Format','11 digits, never changes']],
-    tip:'Waiting on the letter? You can retrieve the ID in person at your local Finanzamt with your passport rather than losing a month of class-VI withholding.',law:'§139b AO'},
-  g_gwv:{de:'Geldwerter Vorteil',en:'Benefit in kind',
-    body:'Non-cash benefits — company car, subsidised meals, job ticket above the exemption — are converted to a monetary value, added to your taxable gross, taxed, then deducted again. That\'s why a company car makes your payslip look bigger and your net smaller: you\'re paying tax on the benefit (e.g. 1% of list price/month for private car use, 0.25% for many EVs).',
-    facts:[['Company car','1% rule (0.25% for EVs ≤ €100k)']],
-    tip:'Check whether your employer\'s benefits use tax-free allowances first: €50/month voucher allowance and the Deutschlandticket subsidy can be structured with zero tax impact.',law:'§8 EStG'},
-  g_bav:{de:'Betriebliche Altersvorsorge (bAV)',en:'Company pension',
-    body:'Salary you divert into a company pension before tax and social insurance (Entgeltumwandlung). In 2026 up to 8% of the pension ceiling is tax-free and 4% social-insurance-free. Employers must add at least 15% on top of what you convert.',
-    facts:[['Employer top-up','min. 15% mandatory']],
-    tip:'Good deal if the employer adds well above 15% — but payouts are taxed later and reduce your gross for pension points and Elterngeld. Do the math, don\'t sign by default.',law:'§1a BetrAVG, §3 Nr.63 EStG'},
-  g_vwl:{de:'Vermögenswirksame Leistungen (VL)',en:'Capital-forming payments',
-    body:'A small savings top-up (up to €40/month) many employers pay into a savings or investment contract you choose. It\'s a legacy benefit lots of employees never claim because they\'d have to ask.',
-    facts:[['Typical amount','€6.65–40 /mo']],
-    tip:'Check your collective agreement or ask HR whether VL is on offer — it\'s free money and an ETF-based VL contract is usually the best vehicle.',law:'5. VermBG'},
-  g_ug:{de:'Urlaubs- & Weihnachtsgeld',en:'Holiday & Christmas bonus',
-    body:'13th/14th-style bonuses paid in summer/November where the contract or collective agreement grants them. They are taxed as "sonstige Bezüge" (one-off payments) using an annualised method — so the tax on that single month looks disproportionately high, which is normal.',
-    facts:[['Taxed as','One-off payment (annualised)']],
-    tip:'A big June or November deduction spike is not an error — the annual tax return smooths it out.',law:'§39b Abs.3 EStG'},
-  g_au:{de:'Entgeltfortzahlung',en:'Sick pay',
-    body:'Your employer continues 100% of your pay for the first 6 weeks of illness. After that your Krankenkasse pays Krankengeld: 70% of gross (max 90% of net) for up to 78 weeks.',
-    facts:[['Employer pays','100% for 6 weeks'],['Then Krankenkasse','~70% of gross']],
-    tip:'Always send the sick note (eAU is now digital via your doctor) on day one your contract requires it — missing the deadline can legally cost you the pay.',law:'EFZG, §44 SGB V'}
-  };
-}
-function fmt2(n){return n.toLocaleString('de-DE')+' €'}
-function stateName(code){return document.querySelector('#state option[value="'+code+'"]').textContent}
-
-/* =========================================================
-   RENDER
-   ========================================================= */
-let selected = null;
-
-function row(key,de,en,basis,amt,neg){
-  return `<div class="pl-row${neg?' neg':''}${selected===key?' sel':''}" data-k="${key}" tabindex="0" role="button" aria-label="${de}: ${fmt(amt)}. Click to explain.">
-    <span class="nm"><b>${de}</b><small>${en}</small></span>
-    <span class="basis">${basis||''}</span>
-    <span class="amt">${neg?'−':''}${fmt(amt)}</span></div>`;
-}
-
-function render(){
-  const r = calc();
-  const ex = EX(r);
-
-  document.getElementById('docMonth').textContent = new Date().toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'});
-  document.getElementById('docClass').textContent = ['','I','II','III','IV','V','VI'][+r.cls];
-  document.getElementById('docState').textContent = stateName(r.state);
-  document.getElementById('docChurch').textContent = r.church?'ja':'nein';
-  document.getElementById('docKids').textContent = r.kids;
-
-  document.getElementById('earnRows').innerHTML = row('gehalt','Gehalt','Base salary','',r.gross,false);
-
-  let d = row('lst','Lohnsteuer','Wage tax','progressive',r.lst,true);
-  d += row('soli','Solidaritätszuschlag','Solidarity surcharge', r.soli>0?'5,5 %':'below threshold', r.soli, true);
-  if (r.church) d += row('kist','Kirchensteuer','Church tax', churchRate(r.state)+' %', r.kist, true);
-  d += row('kv','KV-Beitrag','Health insurance', pct(r.kvEmpRate), r.kvEmp, true);
-  d += row('pv','PV-Beitrag','Care insurance', pct(r.pvEmpRate), r.pvEmp, true);
-  d += row('rv','RV-Beitrag','Pension insurance', '9,3 %', r.rvEmp, true);
-  d += row('av','AV-Beitrag','Unemployment insurance', '1,3 %', r.avEmp, true);
-  document.getElementById('dedRows').innerHTML = d;
-
-  document.getElementById('totDed').textContent = '−'+fmt(r.tax+r.svEmp);
-  document.getElementById('totNet').textContent = fmt(r.net);
-
-  let e = row('erkv','KV Arbeitgeberanteil','Employer: health', pct(r.kvEmpRate), r.kvEr,false);
-  e += row('erpv','PV Arbeitgeberanteil','Employer: care', pct(r.saxony?1.3:1.8), r.pvEr,false);
-  e += row('errv','RV Arbeitgeberanteil','Employer: pension','9,3 %', r.rvEr,false);
-  e += row('erav','AV Arbeitgeberanteil','Employer: unemployment','1,3 %', r.avEr,false);
-  document.getElementById('erRows').innerHTML = e;
-  document.getElementById('totCost').textContent = fmt(r.gross + r.svEr);
-
-  /* bar */
-  const g = r.gross || 1;
-  const pn = r.net/g*100, pt = r.tax/g*100, ps = r.svEmp/g*100;
-  document.getElementById('bar').innerHTML =
-    `<div class="b-net" style="width:${pn}%"></div><div class="b-tax" style="width:${pt}%"></div><div class="b-sv" style="width:${ps}%"></div>`;
-  document.getElementById('lgNet').textContent = pn.toFixed(1)+'%';
-  document.getElementById('lgTax').textContent = pt.toFixed(1)+'%';
-  document.getElementById('lgSv').textContent  = ps.toFixed(1)+'%';
-
-  syncURL(r);
-  bindRows(ex);
-  if (selected && ex[selected]) showExplain(ex[selected]); // keep panel in sync with new numbers
-}
-
-function bindRows(ex){
-  document.querySelectorAll('.pl-row').forEach(el=>{
-    const go = ()=>{ selected = el.dataset.k;
-      document.querySelectorAll('.pl-row').forEach(x=>x.classList.toggle('sel',x.dataset.k===selected));
-      document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
-      showExplain(ex[selected]); };
-    el.onclick = go;
-    el.onkeydown = e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();go();} };
-  });
-}
-
-function showExplain(x){
-  if(!x) return;
-  const facts = (x.facts||[]).map(f=>`<span class="fact">${f[0]}: <b>${f[1]}</b></span>`).join('');
-  document.getElementById('explain').innerHTML =
-    `<div class="de">${x.de}</div><div class="en">${x.en}</div>
-     <p>${x.body}</p>
-     ${facts?`<div class="facts">${facts}</div>`:''}
-     ${x.tip?`<div class="tip"><b>Expat tip</b>${x.tip}</div>`:''}
-     ${x.law?`<div class="law">Legal basis: ${x.law}</div>`:''}`;
-  const panel=document.getElementById('explain');
-  if(window.innerWidth<980) panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-/* ---- glossary chips ---- */
-const chipKeys = ['g_stkl','g_stid','g_svnr','g_gwv','g_bav','g_vwl','g_ug','g_au'];
-function renderChips(){
-  const ex = EX(calc());
-  document.getElementById('chips').innerHTML = chipKeys.map(k=>
-    `<button class="chip" data-k="${k}">${ex[k].de}</button>`).join('');
-  document.querySelectorAll('.chip').forEach(c=>{
-    c.onclick=()=>{ selected=c.dataset.k;
-      document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c));
-      document.querySelectorAll('.pl-row').forEach(x=>x.classList.remove('sel'));
-      showExplain(EX(calc())[c.dataset.k]);
-      document.getElementById('explain').scrollIntoView({behavior:'smooth',block:'center'}); };
-  });
-}
-
-/* ---- inputs ---- */
-['gross','taxclass','state','kids','zb'].forEach(id=>
-  document.getElementById(id).addEventListener('input',render));
-document.querySelectorAll('#churchSwitch button').forEach(b=>
-  b.onclick=()=>{document.querySelectorAll('#churchSwitch button').forEach(x=>x.classList.remove('on'));b.classList.add('on');render();});
-
-/* ---- email (front-end only for v1; wire to Buttondown/Mailerlite later) ---- */
-document.getElementById('ctaForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  e.target.querySelector('input').style.display='none';
-  e.target.querySelector('button').style.display='none';
-  document.getElementById('ctaOk').style.display='inline';
-});
-
-/* ---- shareable URLs (?g=5000&c=1&s=BE&k=0&ch=0&zb=2.9) ---- */
-function applyURL(){
-  const q = new URLSearchParams(location.search);
-  if (q.has('g'))  document.getElementById('gross').value = q.get('g');
-  if (q.has('c'))  document.getElementById('taxclass').value = q.get('c');
-  if (q.has('s'))  document.getElementById('state').value = q.get('s');
-  if (q.has('k'))  document.getElementById('kids').value = q.get('k');
-  if (q.has('zb')) document.getElementById('zb').value = q.get('zb');
-  if (q.get('ch') === '1'){
-    document.querySelectorAll('#churchSwitch button').forEach(x=>x.classList.remove('on'));
-    document.querySelector('#churchSwitch button[data-v="1"]').classList.add('on');
+async function handleFile(file){
+  results.innerHTML=''; status.classList.remove('err');
+  if(file.type!=='application/pdf'){status.textContent='That is not a PDF.';status.classList.add('err');return;}
+  status.textContent='Reading '+file.name+' locally…';
+  try{
+    const buf=await file.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    // Decode the FIRST payslip only (multi-slip files can be huge)
+    const maxPages=Math.min(pdf.numPages,2);
+    let lines=[];
+    for(let p=1;p<=maxPages;p++){
+      const page=await pdf.getPage(p);
+      const tc=await page.getTextContent();
+      lines=lines.concat(reconstructLines(tc.items));
+      if(p===1 && parsePayments(lines).length) break; // first page had the payments block
+    }
+    renderSlip(lines, pdf.numPages);
+  }catch(err){
+    status.textContent='Could not read this PDF ('+err.message+'). If it is a scan/photo, only native PDFs are supported for now.';
+    status.classList.add('err');
   }
 }
-function syncURL(r){
-  const q = new URLSearchParams({g:r.gross,c:r.cls,s:r.state,k:r.kids,ch:r.church?1:0,zb:r.zb});
-  history.replaceState(null,'','?'+q.toString());
-}
-document.getElementById('shareBtn').addEventListener('click',e=>{
-  navigator.clipboard.writeText(location.href).then(()=>{
-    e.target.textContent = '✓ Link copied';
-    setTimeout(()=>{e.target.textContent='⧉ Copy link to this calculation';},1800);
-  });
-});
 
-applyURL();
-render();
-renderChips();
+/* group text items into visual lines by y-coordinate, order by x */
+function reconstructLines(items){
+  const rows={};
+  for(const it of items){
+    if(!it.str.trim()) continue;
+    const y=Math.round(it.transform[5]/2)*2; // 2pt tolerance
+    (rows[y]=rows[y]||[]).push({x:it.transform[4],s:it.str});
+  }
+  return Object.keys(rows).sort((a,b)=>b-a).map(y=>{
+    const parts=rows[y].sort((a,b)=>a.x-b.x);
+    let line='', lastEnd=0;
+    for(const p of parts){
+      const gap=Math.max(1,Math.round((p.x-lastEnd)/4));
+      line+=' '.repeat(line?gap:0)+p.s;
+      lastEnd=p.x+p.s.length*4;
+    }
+    return line;
+  });
+}
+
+/* wage lines: code + description ... [flags] amount */
+const AMT=/(\d{1,3}(?:\.\d{3})*,\d{2})-?\s*$/;
+function parsePayments(lines){
+  const out=[]; let inPay=false;
+  for(const ln of lines){
+    if(/^\s*(Payments|Bezüge)\b/.test(ln)){inPay=true;continue;}
+    if(/(Total gross income|Gesamtbrutto)/.test(ln)) inPay=false;
+    if(!inPay) continue;
+    const m=ln.match(/^\s*(\d{3,4})\s+(.+?)\s{2,}/);
+    const a=ln.match(AMT);
+    if(m && a && !/^[\d\s./-]+$/.test(m[2])){
+      const f=ln.match(/\s([LF])\s+([LF])\s+([JN])\s/) || [];
+      out.push({code:m[1],desc:m[2].trim(),amt:a[1]+(ln.trim().endsWith('-')?'-':''),tx:f[1]||'',so:f[2]||'',tg:f[3]||''});
+    }
+  }
+  return out;
+}
+function parse99(lines){
+  const out=[];
+  for(const ln of lines){
+    const m=ln.match(/(99\d{2})\s+([A-Za-zÄÖÜäöüß./ -]{3,40}?)\s{2,}(\d{1,3}(?:\.\d{3})*,\d{2})(-?)\s*$/);
+    if(m) out.push({code:m[1],desc:m[2].trim(),amt:m[3]+m[4],tx:'',so:'',tg:''});
+  }
+  return out;
+}
+function grab(lines,label){
+  for(const ln of lines){
+    if(ln.includes(label)){const a=ln.match(AMT); if(a) return a[1];}
+  }
+  return null;
+}
+
+function renderSlip(lines,total){
+  const pay=parsePayments(lines), extra=parse99(lines);
+  if(!pay.length){
+    status.textContent='No payments block found — this layout isn\'t recognised yet. Use the paste box below for individual lines.';
+    status.classList.add('err'); return;
+  }
+  status.textContent='Decoded locally ✓'+(total>1?` (file has ${total} pages — showing the first payslip)`:'');
+  const month=(lines.find(l=>/(Pay Advice|Entgeltabrechnung)/.test(l))||'').match(/for (.+?\d{4})|für (.+?\d{4})/);
+  const gross=grab(lines,'Total gross income')||grab(lines,'Gesamtbrutto');
+  const net=grab(lines,'Net income')||grab(lines,'Auszahlungsbetrag')||grab(lines,'Netto');
+
+  let html='';
+  if(month) html+=`<div class="slipmeta">Payslip period: ${month[1]||month[2]}</div>`;
+  if(gross||net) html+=`<div class="totals">${gross?`<div><b>Total gross</b><span>${gross} €</span></div>`:''}${net?`<div><b>Net pay</b><span class="netv">${net} €</span></div>`:''}<div><b>Lines decoded</b><span>${pay.length+extra.length}</span></div></div>`;
+
+  for(const l of pay.concat(extra)){
+    const ex=explain(l.desc);
+    html+=`<div class="line-card">
+      <div class="lc-top"><span class="lc-name"><span class="code">${l.code}</span>${l.desc}</span>
+      <span class="lc-amt${l.amt.endsWith('-')?' neg':''}">${l.amt} €</span></div>
+      <div class="badges">${badges(l.tx,l.so,l.tg)}<span class="badge b-info">${ex.title}</span></div>
+      <div class="lc-body">${ex.body}</div>
+      ${ex.tip?`<div class="lc-tip">${ex.tip}</div>`:''}
+      <div class="lc-law">Legal basis: ${ex.law}</div>
+    </div>`;
+  }
+  html+=`<p class="unparsed">Flags read from the slip: Tx/So <b>L</b> = liable, <b>F</b> = free · TG <b>J/N</b> = counted in total gross or not. Statutory deductions (wage tax, KV/PV/RV/AV) are explained line-by-line in the <a href="index.html">calculator</a>.</p>`;
+  results.innerHTML=html;
+  results.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- paste-a-line ---------- */
+document.getElementById('pasteBtn').addEventListener('click',doPaste);
+document.getElementById('pasteIn').addEventListener('keydown',e=>{if(e.key==='Enter')doPaste();});
+function doPaste(){
+  const v=document.getElementById('pasteIn').value.trim();
+  if(!v) return;
+  const desc=v.replace(/^\s*\d{1,4}\s+/,'');
+  const ex=explain(desc);
+  document.getElementById('pasteOut').innerHTML=`<div class="line-card" style="margin-top:14px">
+    <div class="lc-top"><span class="lc-name">${desc}</span></div>
+    <div class="badges"><span class="badge b-info">${ex.title}</span></div>
+    <div class="lc-body">${ex.body}</div>
+    ${ex.tip?`<div class="lc-tip">${ex.tip}</div>`:''}
+    <div class="lc-law">Legal basis: ${ex.law}</div></div>`;
+}
 </script>
 </body>
 </html>
